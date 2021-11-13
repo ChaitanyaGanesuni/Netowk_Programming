@@ -37,7 +37,7 @@ public class Main {
 
         URL[] urls;
         Image[] images;
-        Random rand = new Random();
+        //Random rand = new Random();
 
         public ImagePanel() {
             urls = new URL[4];

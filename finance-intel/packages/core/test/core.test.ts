@@ -188,6 +188,7 @@ describe('AMFI NAV parser', () => {
       schemeName: 'Example Banking & PSU Debt Fund - DIRECT - IDCW',
       navScaled: 105234600,
       navDate: '2026-10-10',
+      category: 'Debt Scheme - Banking and PSU Fund',
     });
     expect(result.quotes[1]?.isinReinvestment).toBeNull();
     expect(result.unpriced).toBe(1);

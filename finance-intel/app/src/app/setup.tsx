@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, TextInput } from 'react-native';
 import { router } from 'expo-router';
 import { enrollDevice } from '../lib/api';
+import { exportAllData } from '../lib/exportData';
 import { useAppState } from '../lib/AppState';
 import { saveBackendCredentials } from '../lib/secrets';
 import { normalizeBackendUrl } from '../lib/url';
@@ -69,6 +70,11 @@ export default function SetupScreen() {
           • Parsed financial data stays in an encrypted database on this phone; Android cloud backup is disabled for the app.{'\n'}
           • The backend stores encrypted OAuth tokens and message IDs only — no email contents or amounts.
         </Muted>
+        <Button
+          title="Export all my data (JSON)"
+          kind="secondary"
+          onPress={() => void exportAllData().catch((e: unknown) => Alert.alert('Export failed', e instanceof Error ? e.message : String(e)))}
+        />
         <Button title="Delete all local data" kind="danger" onPress={confirmForget} />
       </Card>
     </ScrollView>

@@ -9,7 +9,13 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <PdfEngineHost />
       <Stack>
-        <Stack.Screen name="index" options={{ title: 'Connections' }} />
+        <Stack.Screen name="index" options={{ title: 'Finance Intel' }} />
+        <Stack.Screen name="connections" options={{ title: 'Connections' }} />
+        <Stack.Screen name="transactions" options={{ title: 'Transactions' }} />
+        <Stack.Screen name="insights" options={{ title: 'Spending insights' }} />
+        <Stack.Screen name="portfolio" options={{ title: 'Portfolio' }} />
+        <Stack.Screen name="assistant" options={{ title: 'Assistant' }} />
+        <Stack.Screen name="report" options={{ title: 'Monthly report' }} />
         <Stack.Screen name="setup" options={{ title: 'Set up' }} />
         <Stack.Screen name="connection/[id]" options={{ title: 'Gmail connection' }} />
         <Stack.Screen name="documents" options={{ title: 'Documents' }} />

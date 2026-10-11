@@ -180,13 +180,13 @@ export const upsertNavs: Upsert<NavQuote> = async (db, items) => {
   const fetchedAt = Date.now();
   await db.withExclusiveTransactionAsync(async (txn) => {
     const statement = await txn.prepareAsync(
-      `INSERT INTO nav_quotes (scheme_code, isin_growth, isin_reinvest, scheme_name, nav_scaled, nav_date, fetched_at)
-       VALUES ($code, $isinA, $isinB, $name, $nav, $date, $fetched)
+      `INSERT INTO nav_quotes (scheme_code, isin_growth, isin_reinvest, scheme_name, nav_scaled, nav_date, fetched_at, category)
+       VALUES ($code, $isinA, $isinB, $name, $nav, $date, $fetched, $category)
        ON CONFLICT (scheme_code) DO UPDATE SET
          isin_growth = excluded.isin_growth, isin_reinvest = excluded.isin_reinvest, scheme_name = excluded.scheme_name,
-         nav_scaled = excluded.nav_scaled, nav_date = excluded.nav_date, fetched_at = excluded.fetched_at
+         nav_scaled = excluded.nav_scaled, nav_date = excluded.nav_date, fetched_at = excluded.fetched_at, category = excluded.category
        WHERE excluded.nav_date > nav_quotes.nav_date
-          OR (excluded.nav_date = nav_quotes.nav_date AND excluded.nav_scaled != nav_quotes.nav_scaled)`,
+          OR (excluded.nav_date = nav_quotes.nav_date AND (excluded.nav_scaled != nav_quotes.nav_scaled OR nav_quotes.category IS NULL))`,
     );
     try {
       for (const { record } of items) {
@@ -198,6 +198,7 @@ export const upsertNavs: Upsert<NavQuote> = async (db, items) => {
           $nav: record.navScaled,
           $date: record.navDate,
           $fetched: fetchedAt,
+          $category: record.category,
         });
         changed += result.changes;
       }

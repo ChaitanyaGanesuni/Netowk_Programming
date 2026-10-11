@@ -128,9 +128,13 @@ describe('document import pipeline', () => {
     await queue('m_alert', 'hdfc');
 
     const first = await processDocuments(client);
-    expect(first).toMatchObject({ processed: 4, imported: 0, needsPassword: 3 });
+    expect(first).toMatchObject({ processed: 4, imported: 1, needsPassword: 3 });
     const { counts } = await listDocuments();
-    expect(counts).toEqual({ needs_password: 3, awaiting_parser: 1 });
+    expect(counts).toEqual({ needs_password: 3, imported: 1 });
+    // The bank alert becomes a ledger transaction (amount in paise, account suffix only).
+    const txn = await state.db.getFirstAsync<{ direction: string; amount_paise: number; account_key: string }>('SELECT * FROM raw_transactions');
+    expect(txn).toMatchObject({ direction: 'debit', amount_paise: 25000 });
+    expect(txn?.account_key).toContain('1234');
 
     state.passwords = { pan: 'abcde1234f', byInstitution: {} }; // stored lower-case; PDFs need upper-case
     expect(await requeueDocuments(['needs_password'])).toBe(3);

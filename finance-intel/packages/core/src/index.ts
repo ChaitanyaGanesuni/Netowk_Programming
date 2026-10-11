@@ -11,3 +11,7 @@ export * from './mail';
 export * from './cas';
 export * from './investments';
 export * from './money';
+export * from './ledger';
+export * from './analytics';
+export * from './portfolio';
+export * from './assistant';

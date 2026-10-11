@@ -100,4 +100,33 @@ export const MIGRATIONS: readonly string[] = [
     period_from TEXT, period_to TEXT, imported_at INTEGER NOT NULL, new_transactions INTEGER NOT NULL, warnings TEXT
   );
   `,
+  `
+  -- Phases 4–8: transaction ledger, balances, card statements, learned rules, net-worth history.
+  ALTER TABLE nav_quotes ADD COLUMN category TEXT;
+
+  CREATE TABLE accounts (
+    key TEXT PRIMARY KEY, institution_id TEXT NOT NULL, instrument TEXT NOT NULL CHECK (instrument IN ('account', 'card')),
+    suffix TEXT, label TEXT NOT NULL, created_at INTEGER NOT NULL
+  );
+  CREATE TABLE raw_transactions (
+    key TEXT PRIMARY KEY, account_key TEXT NOT NULL, instrument TEXT NOT NULL, date TEXT NOT NULL, at INTEGER NOT NULL,
+    direction TEXT NOT NULL CHECK (direction IN ('debit', 'credit')), amount_paise INTEGER NOT NULL CHECK (amount_paise > 0),
+    channel TEXT NOT NULL, counterparty TEXT, description TEXT NOT NULL, reference TEXT,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'posted')), confidence REAL NOT NULL, source_message_id TEXT NOT NULL
+  );
+  CREATE INDEX idx_raw_txn_date ON raw_transactions (date);
+  CREATE TABLE balance_snapshots (
+    key TEXT PRIMARY KEY, account_key TEXT NOT NULL, at INTEGER NOT NULL, date TEXT NOT NULL, balance_paise INTEGER NOT NULL,
+    source TEXT NOT NULL, source_message_id TEXT NOT NULL
+  );
+  CREATE INDEX idx_balance_account_at ON balance_snapshots (account_key, at DESC);
+  CREATE TABLE card_statements (
+    key TEXT PRIMARY KEY, account_key TEXT NOT NULL, statement_date TEXT, due_date TEXT, total_due_paise INTEGER,
+    min_due_paise INTEGER, credit_limit_paise INTEGER, available_limit_paise INTEGER, source_message_id TEXT NOT NULL
+  );
+  CREATE TABLE category_rules (pattern TEXT PRIMARY KEY, category TEXT NOT NULL, kind TEXT, created_at INTEGER NOT NULL);
+  CREATE TABLE networth_snapshots (
+    date TEXT PRIMARY KEY, net_worth_paise INTEGER NOT NULL, assets_paise INTEGER NOT NULL, liabilities_paise INTEGER NOT NULL, created_at INTEGER NOT NULL
+  );
+  `,
 ];

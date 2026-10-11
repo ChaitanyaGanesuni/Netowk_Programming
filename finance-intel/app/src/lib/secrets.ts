@@ -47,7 +47,7 @@ export async function getOrCreateDatabaseKey(): Promise<string> {
 }
 
 export async function deleteAllSecrets(): Promise<void> {
-  await Promise.all(Object.values(KEYS).map((key) => SecureStore.deleteItemAsync(key, OPTIONS)));
+  await Promise.all([...Object.values(KEYS), 'fi.aiSettings'].map((key) => SecureStore.deleteItemAsync(key, OPTIONS)));
 }
 
 export async function loadDocumentPasswords(): Promise<DocumentPasswords> {

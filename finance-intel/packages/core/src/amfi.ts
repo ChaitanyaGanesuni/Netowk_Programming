@@ -12,6 +12,8 @@ export interface NavQuote {
   navScaled: number;
   /** ISO date (YYYY-MM-DD) the NAV applies to. */
   navDate: string;
+  /** SEBI category from the file's section heading, e.g. "Equity Scheme - Large Cap Fund". */
+  category: string | null;
 }
 
 export interface NavParseResult {
@@ -52,8 +54,14 @@ function isin(value: string): string | null {
 export function parseNavAll(text: string): NavParseResult {
   const result: NavParseResult = { quotes: [], rejected: [], unpriced: 0 };
   const lines = text.split(/\r?\n/);
+  let category: string | null = null;
   lines.forEach((raw, index) => {
     const line = raw.trim();
+    const heading = /^(?:Open|Close|Interval)\s+Ended\s+Schemes\s*\((.+)\)\s*$/i.exec(line);
+    if (heading) {
+      category = (heading[1] ?? '').trim();
+      return;
+    }
     if (!line.includes(';') || line.toLowerCase().startsWith('scheme code')) return;
     const lineNo = index + 1;
     const fields = line.split(';');
@@ -83,6 +91,7 @@ export function parseNavAll(text: string): NavParseResult {
         schemeName: name.trim(),
         navScaled: parseDecimalToScaled(navText, NAV_SCALE),
         navDate,
+        category,
       });
     } catch (error) {
       if (!(error instanceof DecimalParseError)) throw error;

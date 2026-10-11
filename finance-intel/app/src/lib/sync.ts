@@ -2,7 +2,9 @@ import { ConnectionDto, runSync, type PublicFeedState, type SyncRunRecord } from
 import { BackendClient } from './api';
 import { AmfiNavAdapter, BackendInboxAdapter, SqliteSyncStore, latestNavDate, upsertInbox, upsertNavs } from './adapters';
 import { getDatabase } from './database';
-import { processDocuments, type ProcessSummary } from './documents';
+import { processDocuments, requeueOutdated, type ProcessSummary } from './documents';
+import { loadFinanceState, recordNetWorthSnapshot } from './finance';
+import { notifyNow, scheduleDueReminders } from './notify';
 import type { BackendCredentials } from './secrets';
 
 export interface LocalSnapshot {
@@ -84,10 +86,24 @@ export async function syncAll(credentials: BackendCredentials | null): Promise<S
   let documents: ProcessSummary | null = null;
   if (credentials) {
     try {
-      documents = await processDocuments(new BackendClient(credentials));
+      await requeueOutdated();
+      documents = await processDocuments(new BackendClient(credentials), 40);
     } catch (error) {
       backendError ??= error instanceof Error ? error.message : String(error);
     }
+  }
+
+  // Derived data: net-worth history and reminders. Failures here never block syncing.
+  try {
+    const state = await loadFinanceState();
+    await recordNetWorthSnapshot(state);
+    await scheduleDueReminders(state);
+    const snapshot = await loadSnapshot();
+    if (snapshot.connections.some((c) => c.status === 'needs_reauth')) {
+      await notifyNow('Reconnect Gmail', 'Google access ended, so new statements and alerts are not being imported. Open the app to reconnect.');
+    }
+  } catch {
+    // Reported on the dashboard instead.
   }
   return { inbox, nav, documents, backendError };
 }

@@ -1,14 +1,26 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 import {
+  atomsFromPages,
   classifyMail,
+  extractPages,
+  findAccountSuffix,
+  findCardSuffix,
+  getInstitution,
+  lineText,
+  mailBodyText,
   normalizeCas,
+  parseAlert,
+  parseBankStatement,
+  parseCardStatement,
   parseCas,
   parseMail,
   ProviderError,
   redactSample,
   UnsupportedStatementError,
   type DocumentKind,
+  type ExtractedPage,
   type NormalizedStatement,
+  type ParsedMail,
 } from '@fi/core';
 import { ApiError, type BackendClient } from './api';
 import { getDatabase } from './database';
@@ -17,7 +29,7 @@ import { passwordCandidates } from './passwords';
 import { loadDocumentPasswords } from './secrets';
 
 /** Bump when parsing improves, so "Reprocess" can find documents parsed by older code. */
-export const PARSER_VERSION = 1;
+export const PARSER_VERSION = 2;
 
 export type DocumentStatus = 'imported' | 'needs_password' | 'unsupported' | 'failed' | 'awaiting_parser' | 'skipped';
 
@@ -31,7 +43,8 @@ export interface ProcessSummary {
 }
 
 const CAS_INSTITUTIONS = ['cams', 'kfintech', 'cdsl', 'nsdl'];
-const AWAITING: ReadonlySet<DocumentKind> = new Set(['bank_statement', 'card_statement', 'transaction_alert', 'contract_note', 'mf_confirmation']);
+/** Covered by the monthly CAS (holdings) — individual parsers are not built. */
+const COVERED_BY_CAS: ReadonlySet<DocumentKind> = new Set(['contract_note', 'mf_confirmation']);
 
 interface Outcome {
   status: DocumentStatus;
@@ -97,25 +110,117 @@ async function importStatement(db: SQLiteDatabase, s: NormalizedStatement, messa
   return { newTransactions, holdings: s.dematHoldings.length + s.snapshots.length };
 }
 
+/** Opens a PDF with the first working password; 'locked' when none works. */
+async function openPdf(bytes: Uint8Array, candidates: string[]): Promise<ExtractedPage[] | 'locked'> {
+  for (const password of candidates.length ? candidates : ['']) {
+    try {
+      return await extractPdf(bytes, password);
+    } catch (error) {
+      if (error instanceof PdfEngineError && (error.code === 'incorrect_password' || error.code === 'password_required')) continue;
+      throw error;
+    }
+  }
+  return 'locked';
+}
+
+const pdfText = (pages: ExtractedPage[]) => extractPages(atomsFromPages(pages)).flatMap((p) => p.lines.map(lineText)).join('\n');
+const isPdf = (a: { filename: string; mimeType: string }) => a.mimeType === 'application/pdf' || /\.pdf$/i.test(a.filename);
+/** Calendar date in India for an epoch-ms timestamp. */
+const istDate = (ms: number) => new Date(ms + 5.5 * 3_600_000).toISOString().slice(0, 10);
+
+async function ensureAccount(db: SQLiteDatabase, institutionId: string, instrument: 'account' | 'card', suffix: string | null): Promise<string> {
+  const key = `${institutionId}:${instrument}:${suffix ?? 'unknown'}`;
+  const name = getInstitution(institutionId)?.name ?? institutionId;
+  await db.runAsync(
+    'INSERT OR IGNORE INTO accounts (key, institution_id, instrument, suffix, label, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    key, institutionId, instrument, suffix, `${name} ${instrument === 'card' ? 'card' : 'a/c'}${suffix ? ` ••${suffix}` : ''}`, Date.now(),
+  );
+  return key;
+}
+
+async function processAlert(db: SQLiteDatabase, institutionId: string, messageId: string, mail: ParsedMail, receivedAt: number): Promise<Outcome> {
+  const isCardIssuer = getInstitution(institutionId)?.type === 'card_issuer';
+  const parsed = parseAlert(mail.subject, mailBodyText(mail), istDate(receivedAt), isCardIssuer);
+  if (!parsed) {
+    return { status: 'unsupported', detail: 'Not recognised as a transaction alert. Share a redacted sample so its format can be added.', warnings: [], newTransactions: 0 };
+  }
+  const accountKey = await ensureAccount(db, institutionId, parsed.instrument, parsed.suffix);
+  const key = parsed.reference
+    ? `${accountKey}|${parsed.date}|${parsed.direction}|${parsed.amountPaise}|${parsed.reference}`
+    : `msg:${messageId}`;
+  let inserted = 0;
+  await db.withExclusiveTransactionAsync(async (txn) => {
+    const r = await txn.runAsync(
+      `INSERT OR IGNORE INTO raw_transactions
+       (key, account_key, instrument, date, at, direction, amount_paise, channel, counterparty, description, reference, status, confidence, source_message_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      key, accountKey, parsed.instrument, parsed.date, receivedAt, parsed.direction, parsed.amountPaise, parsed.channel,
+      parsed.counterparty, mail.subject.slice(0, 200), parsed.reference, parsed.status, parsed.confidence, messageId,
+    );
+    inserted = r.changes;
+    if (parsed.availableBalancePaise !== null) {
+      await txn.runAsync(
+        'INSERT OR REPLACE INTO balance_snapshots (key, account_key, at, date, balance_paise, source, source_message_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        `${accountKey}|${receivedAt}`, accountKey, receivedAt, parsed.date, parsed.availableBalancePaise,
+        parsed.instrument === 'card' ? 'card_available_limit' : 'alert', messageId,
+      );
+    }
+  });
+  const warnings = parsed.confidence < 0.6 ? [`Low-confidence parse (${parsed.confidence}); please check this transaction.`] : [];
+  return {
+    status: 'imported',
+    detail: `${parsed.direction === 'debit' ? 'Debit' : 'Credit'} ₹${(parsed.amountPaise / 100).toFixed(2)}${parsed.counterparty ? ` · ${parsed.counterparty}` : ''} · ${parsed.channel}${parsed.availableBalancePaise !== null ? ' · balance updated' : ''}.`,
+    warnings,
+    newTransactions: inserted,
+  };
+}
+
+async function processStatementSummary(db: SQLiteDatabase, institutionId: string, messageId: string, mail: ParsedMail, kind: 'card_statement' | 'bank_statement', receivedAt: number): Promise<Outcome> {
+  const candidates = passwordCandidates(await loadDocumentPasswords(), institutionId);
+  const texts: string[] = [];
+  let locked = false;
+  for (const attachment of mail.attachments.filter(isPdf)) {
+    const opened = await openPdf(attachment.bytes, candidates);
+    if (opened === 'locked') locked = true;
+    else texts.push(pdfText(opened));
+  }
+  if (!texts.length && !locked) texts.push(mailBodyText(mail));
+  if (!texts.length) {
+    return { status: 'needs_password', detail: `Add the statement password for ${getInstitution(institutionId)?.name ?? institutionId} under Documents.`, warnings: [], newTransactions: 0 };
+  }
+  const text = texts.join('\n');
+  if (kind === 'card_statement') {
+    const summary = parseCardStatement(text);
+    if (!summary) return { status: 'unsupported', detail: 'Could not find the total due or due date in this statement. Share a redacted sample.', warnings: [], newTransactions: 0 };
+    const accountKey = await ensureAccount(db, institutionId, 'card', findCardSuffix(text));
+    await db.runAsync(
+      `INSERT OR REPLACE INTO card_statements (key, account_key, statement_date, due_date, total_due_paise, min_due_paise, credit_limit_paise, available_limit_paise, source_message_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `${accountKey}|${summary.statementDate ?? messageId}`, accountKey, summary.statementDate ?? istDate(receivedAt), summary.dueDate,
+      summary.totalDuePaise, summary.minimumDuePaise, summary.creditLimitPaise, summary.availableLimitPaise, messageId,
+    );
+    return { status: 'imported', detail: `Card statement: total due ${summary.totalDuePaise !== null ? `₹${(summary.totalDuePaise / 100).toFixed(2)}` : '?'}, due ${summary.dueDate ?? '?'}.`, warnings: [], newTransactions: 0 };
+  }
+  const summary = parseBankStatement(text);
+  if (!summary) return { status: 'unsupported', detail: 'Could not find the closing balance in this statement. Share a redacted sample.', warnings: [], newTransactions: 0 };
+  const accountKey = await ensureAccount(db, institutionId, 'account', findAccountSuffix(text));
+  const asOf = summary.periodTo ?? istDate(receivedAt);
+  const at = Date.parse(`${asOf}T18:29:59Z`); // end of that day in India
+  await db.runAsync(
+    'INSERT OR REPLACE INTO balance_snapshots (key, account_key, at, date, balance_paise, source, source_message_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    `${accountKey}|stmt|${asOf}`, accountKey, at, asOf, summary.closingBalancePaise, 'bank_statement', messageId,
+  );
+  return { status: 'imported', detail: `Bank statement: closing balance ₹${((summary.closingBalancePaise ?? 0) / 100).toFixed(2)} on ${asOf}.`, warnings: [], newTransactions: 0 };
+}
+
 async function processStatementPdfs(db: SQLiteDatabase, institutionId: string, pdfs: Uint8Array[], messageId: string): Promise<Outcome> {
   const passwords = await loadDocumentPasswords();
   const candidates = passwordCandidates(passwords, institutionId);
   const outcomes: Outcome[] = [];
   for (const bytes of pdfs) {
-    let pages = null;
-    let passwordProblem = false;
-    for (const password of candidates.length ? candidates : ['']) {
-      try {
-        pages = await extractPdf(bytes, password);
-        break;
-      } catch (error) {
-        if (error instanceof PdfEngineError && (error.code === 'incorrect_password' || error.code === 'password_required')) {
-          passwordProblem = true;
-          continue;
-        }
-        throw error;
-      }
-    }
+    const opened = await openPdf(bytes, candidates);
+    const pages = opened === 'locked' ? null : opened;
+    const passwordProblem = opened === 'locked';
     if (!pages) {
       outcomes.push({
         status: passwordProblem ? 'needs_password' : 'failed',
@@ -207,8 +312,12 @@ export async function processDocuments(client: BackendClient, limit = 20): Promi
       if (classification.kind === 'cas_rta' || classification.kind === 'cas_depository') {
         const pdfs = mail.attachments.filter((a) => a.mimeType === 'application/pdf' || /\.pdf$/i.test(a.filename)).map((a) => a.bytes);
         outcome = await processStatementPdfs(db, row.institution_id, pdfs, row.message_id);
-      } else if (AWAITING.has(classification.kind)) {
-        outcome = { status: 'awaiting_parser', detail: `${classification.reason}. Its parser arrives in Phase 4.`, warnings: [], newTransactions: 0 };
+      } else if (classification.kind === 'transaction_alert') {
+        outcome = await processAlert(db, row.institution_id, row.message_id, mail, meta.receivedAt ?? Date.now());
+      } else if (classification.kind === 'card_statement' || classification.kind === 'bank_statement') {
+        outcome = await processStatementSummary(db, row.institution_id, row.message_id, mail, classification.kind, meta.receivedAt ?? Date.now());
+      } else if (COVERED_BY_CAS.has(classification.kind)) {
+        outcome = { status: 'skipped', detail: `${classification.reason}. Holdings from this come through the monthly CAS.`, warnings: [], newTransactions: 0 };
       } else {
         outcome = { status: 'skipped', detail: classification.reason, warnings: [], newTransactions: 0 };
       }
@@ -228,6 +337,17 @@ export async function processDocuments(client: BackendClient, limit = 20): Promi
     summary.newTransactions += outcome.newTransactions;
   }
   return summary;
+}
+
+/** Re-queues emails an older parser could not handle, so improved parsers pick them up. */
+export async function requeueOutdated(): Promise<number> {
+  const db = await getDatabase();
+  const result = await db.runAsync(
+    `UPDATE inbox SET status = 'pending' WHERE (connection_id, message_id) IN
+       (SELECT connection_id, message_id FROM documents WHERE parser_version < ? AND status IN ('awaiting_parser', 'unsupported'))`,
+    PARSER_VERSION,
+  );
+  return result.changes;
 }
 
 /** Puts documents with the given statuses back in the queue (e.g. after adding a password). */

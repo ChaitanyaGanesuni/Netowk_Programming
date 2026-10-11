@@ -1,132 +1,148 @@
-import { useCallback, useMemo } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Link, Redirect, router, useFocusEffect } from 'expo-router';
-import { buildConnectionRows, formatAge, type ConnectionRowView } from '@fi/core';
+import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Redirect, router, type Href } from 'expo-router';
+import { formatPaise } from '@fi/core';
 import { useAppState } from '../lib/AppState';
-import {
-  Button,
-  Card,
-  DATA_KIND_LABEL,
-  FreshnessPill,
-  Label,
-  Muted,
-  PRODUCT_TYPE_LABEL,
-  StatusPill,
-  Title,
-  formatTimestamp,
-  styles as ui,
-  usePalette,
-} from '../components/ui';
+import { useFinance } from '../lib/useFinance';
+import { IncomeExpenseBars, LineChart } from '../components/charts';
+import { Button, Card, Label, Muted, Pill, Title, styles as ui, usePalette } from '../components/ui';
 
-function ConnectionCard({ row, onAction }: { row: ConnectionRowView; onAction: (row: ConnectionRowView) => void }) {
+const NAV: Array<{ title: string; href: Href }> = [
+  { title: 'Transactions', href: '/transactions' },
+  { title: 'Spending insights', href: '/insights' },
+  { title: 'Portfolio', href: '/portfolio' },
+  { title: 'Ask the assistant', href: '/assistant' },
+  { title: 'Monthly report', href: '/report' },
+  { title: 'Documents & passwords', href: '/documents' },
+  { title: 'Imported investments', href: '/investments' },
+  { title: 'Connections', href: '/connections' },
+  { title: 'Settings & privacy', href: '/setup' },
+];
+
+const pct = (x: number | null) => (x === null ? '—' : `${(x * 100).toFixed(1)}%`);
+
+export default function Dashboard() {
+  const app = useAppState();
   const p = usePalette();
-  const actionTitle = row.action === 'connect_gmail' ? 'Connect Gmail' : row.action === 'reconnect_gmail' ? 'Reconnect Gmail' : 'Retry';
-  return (
-    <Card>
-      <View style={ui.row}>
-        <Title>{row.name}</Title>
-        <StatusPill status={row.status} label={row.statusLabel} />
-      </View>
-      {row.accountTypes.length > 0 && <Muted>{row.accountTypes.map((t) => PRODUCT_TYPE_LABEL[t]).join(' · ')}</Muted>}
-      {row.products.length > 0 && <Label>{row.products.join(', ')}</Label>}
-      <Muted>Data: {row.dataAvailable.map((k) => DATA_KIND_LABEL[k]).join(', ')}</Muted>
-      <View style={ui.row}>
-        <Muted>
-          Last successful sync: {formatTimestamp(row.lastSuccessAt)}
-          {row.freshness.ageMs !== null ? ` (${formatAge(row.freshness.ageMs)} ago)` : ''}
-        </Muted>
-        <FreshnessPill level={row.freshness.level} />
-      </View>
-      {row.messagesFound !== null && <Muted>Finance emails found: {row.messagesFound}</Muted>}
-      <Muted>
-        Consent: {row.consentExpiresAt ? `expires ${formatTimestamp(row.consentExpiresAt)}` : row.consentNote}
-      </Muted>
-      {row.lastError && <Text style={[ui.small, { color: p.danger }]}>Last error: {row.lastError}</Text>}
-      {row.status === 'no_emails_found' && (
-        <Muted>No emails from this institution’s known senders yet. Turn on email alerts/e-statements with them, or send a sample so the sender list can be corrected.</Muted>
-      )}
-      {row.limitations.map((limitation) => (
-        <Muted key={limitation}>• {limitation}</Muted>
-      ))}
-      {row.action && <Button title={actionTitle} kind={row.action === 'retry' ? 'secondary' : 'primary'} onPress={() => onAction(row)} />}
-    </Card>
-  );
-}
+  const { state, error, reload } = useFinance();
 
-export default function ConnectionsScreen() {
-  const state = useAppState();
-  const p = usePalette();
-  const { reload } = state;
+  if (!app.ready) return <ActivityIndicator style={{ flex: 1 }} />;
+  if (!app.credentials) return <Redirect href="/setup" />;
 
-  useFocusEffect(
-    useCallback(() => {
-      reload().catch(() => undefined);
-    }, [reload]),
-  );
-
-  const rows = useMemo(
-    () => (state.snapshot ? buildConnectionRows(state.snapshot.connections, state.snapshot.feeds, Date.now()) : []),
-    [state.snapshot],
-  );
-  const gmail = state.snapshot?.connections.find((c) => c.provider === 'gmail');
-
-  if (!state.ready) return <ActivityIndicator style={{ flex: 1 }} />;
-  if (!state.credentials) return <Redirect href="/setup" />;
-
-  const run = (task: () => Promise<void>) => {
-    task().catch((error: unknown) => Alert.alert('Something went wrong', error instanceof Error ? error.message : String(error)));
+  const sync = () => {
+    app
+      .syncNow()
+      .then(reload)
+      .catch((e: unknown) => Alert.alert('Sync failed', e instanceof Error ? e.message : String(e)));
   };
 
-  const onAction = (row: ConnectionRowView) => {
-    if (row.action === 'connect_gmail' || row.action === 'reconnect_gmail') run(state.connectGmail);
-    else run(state.syncNow);
-  };
+  const nw = state?.netWorth;
+  const month = state?.thisMonth;
+  const stale = nw?.items.filter((i) => i.freshness === 'stale' || i.freshness === 'aging') ?? [];
+  const upcomingRecurring = (state?.recurring ?? []).filter((r) => r.nextExpectedDate <= new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10));
 
   return (
-    <ScrollView
-      style={{ backgroundColor: p.bg }}
-      contentContainerStyle={screen.content}
-      refreshControl={<RefreshControl refreshing={state.syncing} onRefresh={() => run(state.syncNow)} />}
-    >
+    <ScrollView style={{ backgroundColor: p.bg }} contentContainerStyle={screen.content} refreshControl={<RefreshControl refreshing={app.syncing} onRefresh={sync} />}>
       <Card>
-        <Title>Data sources</Title>
-        <Muted>
-          Bank, card and investment data arrive through read-only Gmail access to the emails your institutions already send you.
-          The backend checks your mailbox every 30 minutes even when this app is closed. Mutual fund NAVs come from AMFI’s public feed.
-        </Muted>
-        {gmail ? (
-          <Link href={`/connection/${gmail.id}`} style={[ui.body, { color: p.accent }]}>
-            Gmail {gmail.accountLabel} — details, history and disconnect ›
-          </Link>
-        ) : (
-          <Button title="Connect Gmail (read-only)" onPress={() => run(state.connectGmail)} />
-        )}
-        <Button title="Sync now" kind="secondary" busy={state.syncing} onPress={() => run(state.syncNow)} />
-        {state.message && <Label>{state.message}</Label>}
-        {state.snapshot && (
+        <Muted>Net worth</Muted>
+        <Text style={[screen.big, { color: p.text }]}>{nw && nw.items.length ? formatPaise(nw.netWorthPaise) : '—'}</Text>
+        {nw && nw.items.length > 0 && (
           <Muted>
-            {state.snapshot.pendingMessages} finance emails waiting to be read · connection list updated{' '}
-            {formatTimestamp(state.snapshot.connectionsFetchedAt)}
+            Assets {formatPaise(nw.assetsPaise)} · Liabilities {formatPaise(nw.liabilitiesPaise)}
+            {'\n'}Bank {formatPaise(nw.bankPaise)} · Investments {formatPaise(nw.investmentsPaise)} · Cards owed {formatPaise(nw.cardOutstandingPaise)}
           </Muted>
         )}
+        {nw && nw.items.length === 0 && <Muted>No balances or holdings imported yet. Connect Gmail, save your PAN under Documents, then sync.</Muted>}
+        {stale.length > 0 && <Text style={[ui.small, { color: p.warn }]}>Older data: {stale.map((i) => `${i.label} (${i.asOf})`).slice(0, 4).join(', ')}</Text>}
+        {nw?.notes.map((n) => <Muted key={n}>• {n}</Muted>)}
+        <Button title="Sync now" kind="secondary" busy={app.syncing} onPress={sync} />
+        {app.message && <Label>{app.message}</Label>}
+        {error && <Text style={[ui.small, { color: p.danger }]}>{error}</Text>}
       </Card>
 
-      {rows.map((row) => (
-        <ConnectionCard key={row.institutionId} row={row} onAction={onAction} />
-      ))}
+      {state && state.netWorthHistory.length >= 2 && (
+        <Card>
+          <Title>Net worth over time</Title>
+          <LineChart points={state.netWorthHistory.map((h) => ({ label: h.date, value: h.netWorthPaise }))} />
+        </Card>
+      )}
 
-      <Card>
-        <Title>Not connected</Title>
-        <Muted>
-          Account Aggregator (needs a regulated entity), broker APIs for Groww and Bajaj Broking (paid or unpublished pricing),
-          digital/physical gold, EPF and PPF. See INTEGRATION_FEASIBILITY.md for details.
-        </Muted>
-      </Card>
-      <Button title="Documents & statement passwords" kind="secondary" onPress={() => router.push('/documents')} />
-      <Button title="Imported investments" kind="secondary" onPress={() => router.push('/investments')} />
-      <Button title="Device & privacy settings" kind="secondary" onPress={() => router.push('/setup')} />
+      {month && (
+        <Card>
+          <Title>This month ({month.month})</Title>
+          <Muted>
+            Income {formatPaise(month.incomePaise)} · Spending {formatPaise(month.expensePaise)}
+            {month.loanRepaymentPaise ? ` · Loans ${formatPaise(month.loanRepaymentPaise)}` : ''}
+          </Muted>
+          <Label>
+            Net cash flow {formatPaise(month.netCashFlowPaise)} · Savings rate {pct(month.savingsRate)}
+          </Label>
+          <Muted>Invested this month {formatPaise(month.netInvestedPaise)} (not counted as spending).</Muted>
+          {month.pendingPaise > 0 && <Muted>Includes {formatPaise(month.pendingPaise)} of card spends not yet on a statement.</Muted>}
+          {state && (
+            <IncomeExpenseBars months={state.months.slice(-6).map((m) => ({ label: m.month.slice(5), income: m.incomePaise, expense: m.expensePaise }))} />
+          )}
+          <Muted>Green: income · Red: spending</Muted>
+        </Card>
+      )}
+
+      {state && (state.upcomingDues.length > 0 || upcomingRecurring.length > 0) && (
+        <Card>
+          <Title>Upcoming payments</Title>
+          {state.upcomingDues.map((d) => (
+            <View key={d.label + d.dueDate} style={ui.row}>
+              <Label>{d.label}</Label>
+              <Pill text={`due ${d.dueDate}`} tone="warn" />
+              <Muted>
+                {formatPaise(d.totalDuePaise)} (min {formatPaise(d.minDuePaise)})
+              </Muted>
+            </View>
+          ))}
+          {upcomingRecurring.map((r) => (
+            <Muted key={r.counterparty + r.nextExpectedDate}>
+              ~{r.nextExpectedDate} · {r.counterparty} · {formatPaise(r.typicalAmountPaise)} ({r.cadence})
+            </Muted>
+          ))}
+        </Card>
+      )}
+
+      {state && state.insights.length > 0 && (
+        <Card>
+          <Title>Potential savings</Title>
+          <Label>
+            About {formatPaise(state.potentialSavings.monthlyPaise)}/month ({formatPaise(state.potentialSavings.annualPaise)}/year) — potential, not guaranteed.
+          </Label>
+          {state.insights.slice(0, 3).map((i) => (
+            <Muted key={i.id}>• {i.title}: {i.finding}</Muted>
+          ))}
+          <Button title="See all insights" kind="secondary" onPress={() => router.push('/insights')} />
+        </Card>
+      )}
+
+      {state && state.balanceGaps.length > 0 && (
+        <Card>
+          <Title>Balance checks</Title>
+          <Muted>
+            Stated balances don’t match the imported transactions in {state.balanceGaps.length} place(s) — usually a transaction that had no email alert (e.g. SMS-only).
+            Enable email alerts for all transactions to close these gaps. Nothing is invented to fill them.
+          </Muted>
+        </Card>
+      )}
+
+      <View style={screen.grid}>
+        {NAV.map((n) => (
+          <Pressable key={n.title} accessibilityRole="button" onPress={() => router.push(n.href)} style={[screen.tile, { backgroundColor: p.card, borderColor: p.border }]}>
+            <Text style={[ui.body, { color: p.accent }]}>{n.title}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <Muted>Figures are calculated from your imported data. This app does not give investment advice or execute trades.</Muted>
     </ScrollView>
   );
 }
 
-const screen = StyleSheet.create({ content: { padding: 16, paddingBottom: 48 } });
+const screen = StyleSheet.create({
+  content: { padding: 16, paddingBottom: 48 },
+  big: { fontSize: 30, fontWeight: '700' },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  tile: { borderWidth: StyleSheet.hairlineWidth, borderRadius: 10, paddingVertical: 14, paddingHorizontal: 12, width: '48%' },
+});

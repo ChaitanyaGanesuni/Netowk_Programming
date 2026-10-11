@@ -51,7 +51,7 @@ The app uses native modules (encrypted SQLite, Keystore, WebView), so it needs a
 **Option A, ready-made APK (recommended, free):**
 
 1. Every push to the app's branch runs the [finance-intel Android APK workflow](https://github.com/ChaitanyaGanesuni/Netowk_Programming/actions/workflows/finance-intel-android.yml). It typechecks, runs all tests, then builds a release APK for 64-bit ARM phones (practically every Android phone from 2017 on).
-2. Open the latest green run, scroll to **Artifacts**, and download `finance-intel-apk`. GitHub delivers it as a zip, so unzip it to get `app-release.apk`. Artifacts expire after 90 days, but you can re-run the workflow at any time.
+2. Open the latest green run, scroll to **Artifacts**, and download `finance-intel-apk`. GitHub delivers it as a zip, so unzip it to get `app-release.apk`. Artifacts expire after 30 days (this repository's setting), but you can re-run the workflow at any time from the Actions tab.
 3. Copy it to your phone, open it, and allow "Install unknown apps" for your file manager when Android asks.
 4. Play Protect may warn that the app is unrecognised. That is expected for a personal APK.
 

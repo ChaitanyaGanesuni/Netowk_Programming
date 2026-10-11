@@ -1,0 +1,26 @@
+{
+  // Cloudflare Workers free plan: 5 cron triggers, 10 ms CPU per invocation, 50 external subrequests.
+  "name": "finance-intel",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "triggers": {
+    // Gmail sweep every 30 minutes. Mail waits in Gmail, so a missed run loses nothing.
+    "crons": ["*/30 * * * *"]
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "finance-intel",
+      // Replace with the id printed by `npx wrangler d1 create finance-intel` (see SETUP.md).
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "vars": {
+    // Set to your deployed worker URL, e.g. https://finance-intel.<account>.workers.dev
+    "PUBLIC_BASE_URL": "https://finance-intel.example.workers.dev",
+    "APP_REDIRECT_URI": "financeintel://oauth"
+  }
+  // Secrets (set with `npx wrangler secret put <NAME>`, never committed):
+  //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, TOKEN_ENCRYPTION_KEY, ENROLLMENT_CODE
+}

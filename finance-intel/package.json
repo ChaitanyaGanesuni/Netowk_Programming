@@ -1,0 +1,13 @@
+{
+  "name": "finance-intel",
+  "private": true,
+  "workspaces": [
+    "app",
+    "backend",
+    "packages/core"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  }
+}

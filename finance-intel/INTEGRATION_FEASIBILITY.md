@@ -1,6 +1,6 @@
 # Integration Feasibility Audit — Personal Finance Intelligence (India)
 
-**Status:** Phase 1 deliverable. No application code has been written yet. The decision gate in §9 needs your input before Phase 2 starts.
+**Status:** Phase 1 complete. Decisions are recorded in §12. Phase 2 (connection architecture) is implemented; see `ARCHITECTURE.md`.
 **Audit date:** 2026-10-11
 **Scope:** One user (you), personal and non-commercial use, Android and iOS.
 
@@ -357,7 +357,30 @@ All arithmetic happens in the deterministic engine. The LLM only receives verifi
 
 ---
 
-## 12. Source index
+## 12. Decisions log (2026-10-11, after Phase 1 review)
+
+| # | Question (§9.4) | Your decision | Consequence |
+|---|---|---|---|
+| 1 | Institutions | **Banks:** SBI, HDFC Bank. **Cards:** HSBC TravelOne, Swiggy HDFC, HDFC Regalia, Flipkart SBI. **Brokers:** Groww, Bajaj Broking. **Mutual funds:** via Groww. | Encoded in `packages/core/src/institutions.ts`. The Flipkart SBI card was confirmed launched by SBI Card in Aug 2025 [S]. |
+| 2 | Single Gmail for all | Yes | A single Gmail connection covers every institution. |
+| 3 | Paid options | **Free only** | No Upstox route or VPS. **Groww Trade API costs about ₹499/month** [S] ([Groww blog](https://groww.in/blog/api-trading-on-groww), [docs](https://groww.in/trade-api/docs/curl)), and **Bajaj Broking API pricing is unpublished** [S] ([review](https://www.chittorgarh.com/broker/bajaj-broking/api-for-algo-trading-review/17/)), so **neither broker API is used**. Demat holdings come from the monthly depository CAS email, and trades from contract-note emails. |
+| 4 | Platform | **Android-first** | No Apple fee. The code stays cross-platform, so iOS can be added later. |
+| 5 | AI | **Free LLMs** | See below. The final choice is made in Phase 8. Core features never depend on AI. |
+
+**Free LLM options:**
+
+| Provider | Free tier | Data use | Label |
+|---|---|---|---|
+| Google Gemini API, free tier | Available on some models, with per-project limits that change without notice | **Prompts and responses are used to improve Google products, and human reviewers may read them** | [V] ([pricing](https://ai.google.dev/gemini-api/docs/pricing), [terms](https://ai.google.dev/gemini-api/terms_preview)) |
+| Groq, free plan | Available; current limits not verified | By default no retention of inference inputs and outputs, except up to 30 days for abuse or reliability investigation; zero data retention can be enabled in Data Controls | [V] ([your data](https://console.groq.com/docs/your-data), [rate limits](https://console.groq.com/docs/rate-limits)) |
+
+**Plan for Phase 8:** default to **Groq's free plan with zero data retention enabled**, and send only aggregated, anonymised summaries: category totals and percentages, with no merchant names, account numbers or dates of birth. Gemini's free tier is offered only as an opt-in, with a warning about its data use. If no provider is reachable, the assistant falls back to template answers built from the deterministic engine.
+
+**Phase 2 delivered:** see `ARCHITECTURE.md` and `SETUP.md`.
+
+---
+
+## 13. Source index
 
 - RBI Master Direction, NBFC-AA: https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=10598
 - Sahamati FIU guide: https://sahamati.org.in/fiu/ · FIU guideline FUR001: https://sahamati.org.in/aa-community-guidelines-v1/fiu-roles-and-responsibilities · Membership: https://sahamati.org.in/membership-form · AA list: https://sahamati.org.in/account-aggregators/ · Non-bank FI types: https://sahamati.org.in/fi-types-activated-by-non-banking-fips-on-aa/ · AA apps: https://sahamati.org.in/aa-apps/

@@ -10,10 +10,13 @@ A private, automated personal finance app for India. It is Android-first and bui
 |---|---|
 | 1. Feasibility and cost audit | Done |
 | 2. Authentication and connection architecture | Done (needs on-device verification) |
-| 3–9 | Not started |
+| 3. Real investment integrations (CAS import) | Done for CAMS, KFintech and CDSL; NSDL pending a sample |
+| 4–9 | Not started |
 
 ```bash
 npm install
 npm run typecheck   # app, backend, core
-npm test            # core + backend unit/integration tests
+npm test            # core (incl. casparser differential + Chromium engine), backend, app pipeline
 ```
+
+Third-party code: see [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).

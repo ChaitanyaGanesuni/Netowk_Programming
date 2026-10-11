@@ -1,5 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { getRandomBytes } from 'expo-crypto';
+import type { DocumentPasswords } from './passwords';
+
+export { passwordCandidates, type DocumentPasswords } from './passwords';
 
 /**
  * Device-bound secrets live in the Android Keystore / iOS Keychain, never in SQLite or
@@ -13,6 +16,7 @@ const KEYS = {
   backendUrl: 'fi.backendUrl',
   deviceToken: 'fi.deviceToken',
   dbKey: 'fi.dbKey',
+  docPasswords: 'fi.docPasswords',
 } as const;
 
 export interface BackendCredentials {
@@ -44,4 +48,19 @@ export async function getOrCreateDatabaseKey(): Promise<string> {
 
 export async function deleteAllSecrets(): Promise<void> {
   await Promise.all(Object.values(KEYS).map((key) => SecureStore.deleteItemAsync(key, OPTIONS)));
+}
+
+export async function loadDocumentPasswords(): Promise<DocumentPasswords> {
+  const raw = await SecureStore.getItemAsync(KEYS.docPasswords, OPTIONS);
+  if (!raw) return { pan: null, byInstitution: {} };
+  try {
+    const parsed = JSON.parse(raw) as Partial<DocumentPasswords>;
+    return { pan: parsed.pan ?? null, byInstitution: parsed.byInstitution ?? {} };
+  } catch {
+    return { pan: null, byInstitution: {} };
+  }
+}
+
+export async function saveDocumentPasswords(passwords: DocumentPasswords): Promise<void> {
+  await SecureStore.setItemAsync(KEYS.docPasswords, JSON.stringify(passwords), OPTIONS);
 }

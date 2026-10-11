@@ -378,6 +378,17 @@ All arithmetic happens in the deterministic engine. The LLM only receives verifi
 
 **Phase 2 delivered:** see `ARCHITECTURE.md` and `SETUP.md`.
 
+**Phase 3 status (2026-10-11):**
+
+| Source | Status |
+|---|---|
+| CAMS + KFintech **Detailed CAS** | Imported automatically from email. This gives your full MF transaction history and covers Groww mutual funds. |
+| **CDSL CAS** | Imported automatically from email. Covers demat equities, ETFs and MF units, which includes Groww and Bajaj Broking holdings, provided their DP is CDSL. Groww's DP being CDSL is a secondary source [S]; Bajaj's DP is unverified [U]. |
+| **NSDL CAS** | Detected but not parsed yet. Needed only if your consolidated CAS comes from NSDL. |
+| Broker contract notes, RTA confirmation emails, bank and card alerts and statements | Classified and queued; their parsers are Phase 4, built against your redacted samples. |
+
+The parsers are TypeScript ports of casparser 1.4.1 (MIT). They are verified against casparser's own output on synthetic statements, **not yet on your real statements**. The first real CAS import is the acceptance test.
+
 ---
 
 ## 13. Source index

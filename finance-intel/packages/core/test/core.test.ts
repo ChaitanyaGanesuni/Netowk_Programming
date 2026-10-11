@@ -199,3 +199,24 @@ describe('AMFI NAV parser', () => {
     expect(parseAmfiDate('1-Jan-2026')).toBe('2026-01-01');
   });
 });
+
+import { formatPaise, formatUnits, valueInPaise } from '../src/money';
+
+describe('money formatting', () => {
+  it('uses Indian digit grouping', () => {
+    expect(formatPaise(1234567890)).toBe('₹1,23,45,678.90');
+    expect(formatPaise(-50)).toBe('-₹0.50');
+    expect(formatPaise(99900)).toBe('₹999.00');
+    expect(formatPaise(100000)).toBe('₹1,000.00');
+  });
+  it('formats units', () => {
+    expect(formatUnits(57634000)).toBe('57.634');
+    expect(formatUnits(1234567)).toBe('1.234567');
+  });
+  it('multiplies units by price exactly', () => {
+    // 57.634 units × ₹2,012.3456 = ₹1,15,979.5263… → ₹1,15,979.53
+    expect(valueInPaise(57634000, 2012345600)).toBe(11597953);
+    // Large holdings stay exact (would overflow a float product's precision).
+    expect(valueInPaise(9_000_000_000_000, 99_999_999_999)).toBe(89_999_999_999_100);
+  });
+});

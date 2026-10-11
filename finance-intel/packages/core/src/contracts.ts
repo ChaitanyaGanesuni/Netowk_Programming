@@ -101,3 +101,11 @@ export type SyncRunsResponse = z.infer<typeof SyncRunsResponse>;
 
 export const ErrorResponse = z.object({ error: z.string(), code: z.string() });
 export type ErrorResponse = z.infer<typeof ErrorResponse>;
+
+/** Gmail `messages.get?format=raw`, proxied by the backend (extra Gmail fields are ignored). */
+export const RawMessageResponse = z.object({
+  id: z.string(),
+  raw: z.string(),
+  internalDate: z.string().optional(),
+});
+export type RawMessageResponse = z.infer<typeof RawMessageResponse>;

@@ -69,10 +69,23 @@ EAS has a free build quota; I could not verify the current limit from the sandbo
    - **Zero for anything else** means the sender list in `packages/core/src/institutions.ts` is wrong for you. Send one sample email header (From line only) and I will fix it.
 4. Importing your history runs in the background every 30 minutes and finishes over a few hours. Pull down on the Connections screen to sync on demand.
 
-## 5. Optional but recommended
+## 5. Import your investments (Phase 3)
+
+1. In the app, open **Documents & statement passwords** and save your PAN. It is stored only in the phone's Keystore and opens CAS PDFs locally.
+2. Request a **Detailed** CAS covering *since inception*, emailed to this Gmail. These are one-time requests on the official sites; I can't automate them because they're web forms:
+   - **CAMS:** CAS mail-back on camsonline.com.
+   - **KFintech:** CAS request on kfintech.com (or mfs.kfintech.com).
+   - Choose "Detailed", the period "since inception" (or the earliest date allowed), and set the password to your PAN when asked.
+3. Monthly CDSL (or NSDL) statements then arrive on their own; Groww and Bajaj Broking holdings come from these.
+4. After the next sync, open **Imported investments** and compare the figures with your PDFs.
+   - "history incomplete" means a statement didn't start from your first purchase; request an older period.
+   - A statement check warning means the parser and the statement disagree on a row. Please report it.
+
+The PDF engine (`app/assets/pdfjs/engine.html`) is generated automatically by `npm install` (postinstall) from the pinned `pdfjs-dist`.
+
+## 6. Optional but recommended
 
 - In net-banking and on each card's portal, turn on **email** transaction alerts and **email** e-statements. More emails means fewer gaps.
-- Request a **detailed** CAS once from CAMS and once from KFintech, covering inception to today, delivered to the same Gmail. Phase 3 uses it to import your full mutual fund transaction history.
 
 ## Revoking access
 

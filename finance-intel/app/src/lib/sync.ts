@@ -2,6 +2,7 @@ import { ConnectionDto, runSync, type PublicFeedState, type SyncRunRecord } from
 import { BackendClient } from './api';
 import { AmfiNavAdapter, BackendInboxAdapter, SqliteSyncStore, latestNavDate, upsertInbox, upsertNavs } from './adapters';
 import { getDatabase } from './database';
+import { processDocuments, type ProcessSummary } from './documents';
 import type { BackendCredentials } from './secrets';
 
 export interface LocalSnapshot {
@@ -50,6 +51,7 @@ export async function refreshConnections(client: BackendClient): Promise<void> {
 export interface SyncSummary {
   inbox: SyncRunRecord | null;
   nav: SyncRunRecord;
+  documents: ProcessSummary | null;
   backendError: string | null;
 }
 
@@ -77,8 +79,17 @@ export async function syncAll(credentials: BackendCredentials | null): Promise<S
     inbox = await runSync(new BackendInboxAdapter(client), new SqliteSyncStore(db, upsertInbox), { maxPages: 50 });
   }
 
+  // NAVs first, so freshly imported holdings can be valued immediately.
   const nav = await runSync(new AmfiNavAdapter(), new SqliteSyncStore(db, upsertNavs, latestNavDate), { maxPages: 1 });
-  return { inbox, nav, backendError };
+  let documents: ProcessSummary | null = null;
+  if (credentials) {
+    try {
+      documents = await processDocuments(new BackendClient(credentials));
+    } catch (error) {
+      backendError ??= error instanceof Error ? error.message : String(error);
+    }
+  }
+  return { inbox, nav, documents, backendError };
 }
 
 export async function recentLocalHistory(limit = 30) {

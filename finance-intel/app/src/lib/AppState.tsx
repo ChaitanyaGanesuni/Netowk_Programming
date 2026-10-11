@@ -48,7 +48,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         summary.inbox && summary.inbox.status === 'failed' && `Inbox: ${summary.inbox.errorMessage}`,
         summary.nav.status === 'failed' && `NAV feed: ${summary.nav.errorMessage}`,
       ].filter(Boolean);
-      setMessage(problems.length ? `Kept last good data. ${problems.join(' · ')}` : 'Sync complete.');
+      const docs = summary.documents;
+      const docNote = docs && docs.processed
+        ? ` Documents: ${docs.processed} read, ${docs.imported} statements imported (${docs.newTransactions} new transactions)${docs.needsPassword ? `, ${docs.needsPassword} need a password` : ''}.`
+        : '';
+      setMessage(problems.length ? `Kept last good data. ${problems.join(' · ')}${docNote}` : `Sync complete.${docNote}`);
     } finally {
       await reload();
       setSyncing(false);

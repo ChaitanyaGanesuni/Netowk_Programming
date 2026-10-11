@@ -122,6 +122,8 @@ export default function ConnectionsScreen() {
           digital/physical gold, EPF and PPF. See INTEGRATION_FEASIBILITY.md for details.
         </Muted>
       </Card>
+      <Button title="Documents & statement passwords" kind="secondary" onPress={() => router.push('/documents')} />
+      <Button title="Imported investments" kind="secondary" onPress={() => router.push('/investments')} />
       <Button title="Device & privacy settings" kind="secondary" onPress={() => router.push('/setup')} />
     </ScrollView>
   );

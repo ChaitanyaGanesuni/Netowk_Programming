@@ -4,26 +4,9 @@
  * fixtures/expected/*.json is casparser's output for the same files (dump_oracle.py).
  */
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { getDocument, OPS } from 'pdfjs-dist/legacy/build/pdf.mjs';
-import { Dec, parseCas, PDF_PAGE_EXTRACTOR_JS, UnsupportedStatementError, type DepositoryCasData, type ExtractedPage, type RtaCasData } from '../src/cas';
-
-// The exact source string the app injects into its WebView.
-// eslint-disable-next-line @typescript-eslint/no-implied-eval
-const extractPage = new Function(`return ${PDF_PAGE_EXTRACTOR_JS}`)() as (ops: typeof OPS, page: unknown) => Promise<ExtractedPage>;
-
-const fixture = (path: string) => fileURLToPath(new URL(`./fixtures/${path}`, import.meta.url));
-
-async function loadPages(name: string, password = 'ABCDE1234F'): Promise<ExtractedPage[]> {
-  const data = new Uint8Array(readFileSync(fixture(`pdf/${name}`)));
-  const task = getDocument({ data, password, verbosity: 0 });
-  const doc = await task.promise;
-  const pages: ExtractedPage[] = [];
-  for (let i = 1; i <= doc.numPages; i++) pages.push(await extractPage(OPS, await doc.getPage(i)));
-  await task.destroy();
-  return pages;
-}
+import { Dec, parseCas, UnsupportedStatementError, type DepositoryCasData, type RtaCasData } from '../src/cas';
+import { fixturePath as fixture, loadFixturePages as loadPages } from './pdfHelper';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const expected = (name: string): any => JSON.parse(readFileSync(fixture(`expected/${name}.json`), 'utf8'));

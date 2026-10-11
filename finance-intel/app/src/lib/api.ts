@@ -5,6 +5,7 @@ import {
   EnrollResponse,
   ErrorResponse,
   InboxPage,
+  RawMessageResponse,
   ProviderError,
   StartAuthResponse,
   SyncRunsResponse,
@@ -95,6 +96,11 @@ export class BackendClient {
 
   inbox(after: string, limit = 200) {
     return this.request(`/v1/inbox?after=${encodeURIComponent(after)}&limit=${limit}`, InboxPage);
+  }
+
+  /** Raw RFC 5322 message (base64url). The backend only serves finance-sender messages. */
+  message(connectionId: string, messageId: string) {
+    return this.request(`/v1/connections/${encodeURIComponent(connectionId)}/messages/${encodeURIComponent(messageId)}`, RawMessageResponse);
   }
 
   async disconnect(connectionId: string): Promise<void> {

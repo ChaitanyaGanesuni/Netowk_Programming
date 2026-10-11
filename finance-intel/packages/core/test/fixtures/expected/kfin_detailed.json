@@ -1,0 +1,66 @@
+{
+ "statement_period": {
+  "from": "01-Jan-2020",
+  "to": "10-Oct-2026"
+ },
+ "folios": [
+  {
+   "folio": "91012345678",
+   "amc": "Axis Mutual Fund",
+   "name": "Asha Verma",
+   "PAN": "ABCDE1234F",
+   "KYC": "OK",
+   "PANKYC": "OK",
+   "schemes": [
+    {
+     "scheme": "Axis ELSS Tax Saver Fund - Direct Growth",
+     "advisor": "DIRECT",
+     "rta_code": "128TSDGG",
+     "rta": "KFINTECH",
+     "type": "EQUITY",
+     "isin": "INF846K01EW2",
+     "amfi": "120503",
+     "nominees": [
+      "Ravi Verma"
+     ],
+     "open": "0",
+     "close": "200.000",
+     "close_calculated": "200.000",
+     "valuation": {
+      "date": "2026-10-10",
+      "nav": "105.5000",
+      "cost": "15000.00",
+      "value": "21100.00"
+     },
+     "transactions": [
+      {
+       "date": "2021-03-01",
+       "description": "Purchase",
+       "amount": "10000.00",
+       "units": "150.000",
+       "nav": "66.6667",
+       "balance": "150.000",
+       "type": "PURCHASE",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2022-03-01",
+       "description": "Switch In - From Axis Liquid Fund",
+       "amount": "5000.00",
+       "units": "50.000",
+       "nav": "100.0000",
+       "balance": "200.000",
+       "type": "SWITCH_IN",
+       "dividend_rate": null,
+       "gift_folio": null
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "cas_type": "DETAILED",
+ "file_type": "KFINTECH",
+ "parse_warnings": []
+}

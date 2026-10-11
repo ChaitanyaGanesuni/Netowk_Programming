@@ -6,14 +6,16 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "test": "vitest run"
   },
   "dependencies": {
     "zod": "^4.6.6"
   },
   "devDependencies": {
+    "pdfjs-dist": "^6.4.299",
     "typescript": "~6.0.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "@types/node": "^22.0.0"
   }
 }

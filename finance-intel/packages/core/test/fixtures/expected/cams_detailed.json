@@ -1,0 +1,550 @@
+{
+ "statement_period": {
+  "from": "01-Jan-2020",
+  "to": "10-Oct-2026"
+ },
+ "folios": [
+  {
+   "folio": "1234567 / 89",
+   "amc": "HDFC Mutual Fund",
+   "name": "Asha Verma",
+   "PAN": "ABCDE1234F",
+   "KYC": "OK",
+   "PANKYC": "OK",
+   "schemes": [
+    {
+     "scheme": "HDFC Flexi Cap Fund - Direct Plan - Growth Option",
+     "advisor": "DIRECT",
+     "rta_code": "HFCDG",
+     "rta": "CAMS",
+     "type": "EQUITY",
+     "isin": "INF179K01UT0",
+     "amfi": "118955",
+     "nominees": [
+      "Ravi Verma"
+     ],
+     "open": "0",
+     "close": "57.634",
+     "close_calculated": "57.634",
+     "valuation": {
+      "date": "2026-10-10",
+      "nav": "2012.3456",
+      "cost": "105000.00",
+      "value": "115977.43"
+     },
+     "transactions": [
+      {
+       "date": "2021-01-15",
+       "description": "Purchase",
+       "amount": "50000.00",
+       "units": "40.000",
+       "nav": "1250.0000",
+       "balance": "40.000",
+       "type": "PURCHASE",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2021-01-15",
+       "description": "*** Stamp Duty ***",
+       "amount": "2.50",
+       "units": null,
+       "nav": null,
+       "balance": null,
+       "type": "STAMP_DUTY_TAX",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2022-02-05",
+       "description": "Systematic Investment Purchase - Instalment 1/120",
+       "amount": "5000.00",
+       "units": "3.876",
+       "nav": "1290.0000",
+       "balance": "43.876",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2022-03-05",
+       "description": "Systematic Investment Purchase - Instalment 2/120",
+       "amount": "5000.00",
+       "units": "4.000",
+       "nav": "1250.0000",
+       "balance": "47.876",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2022-03-12",
+       "description": "***Registration of Nominee***",
+       "amount": null,
+       "units": null,
+       "nav": null,
+       "balance": null,
+       "type": "MISC",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2022-04-05",
+       "description": "Systematic Investment Purchase - Instalment 3/120",
+       "amount": "5000.00",
+       "units": "3.968",
+       "nav": "1260.0000",
+       "balance": "51.844",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-06-20",
+       "description": "Redemption",
+       "amount": "-20000.00",
+       "units": "-12.000",
+       "nav": "1666.6667",
+       "balance": "39.844",
+       "type": "REDEMPTION",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-08-01",
+       "description": "Purchase",
+       "amount": "40000.00",
+       "units": "17.790",
+       "nav": "2248.4542",
+       "balance": "57.634",
+       "type": "PURCHASE",
+       "dividend_rate": null,
+       "gift_folio": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "folio": "9988776",
+   "amc": "Parag Parikh Mutual Fund",
+   "name": "Asha Verma",
+   "PAN": "ABCDE1234F",
+   "KYC": "OK",
+   "PANKYC": "OK",
+   "schemes": [
+    {
+     "scheme": "Parag Parikh Flexi Cap Fund - Direct Plan Growth",
+     "advisor": "INA000001234",
+     "rta_code": "PP001ZG",
+     "rta": "CAMS",
+     "type": "EQUITY",
+     "isin": "INF879O01027",
+     "amfi": "122639",
+     "nominees": [
+      "Ravi Verma"
+     ],
+     "open": "10.000",
+     "close": "135.500",
+     "close_calculated": "135.500",
+     "valuation": {
+      "date": "2026-10-10",
+      "nav": "92.1100",
+      "cost": "8500.00",
+      "value": "12480.91"
+     },
+     "transactions": [
+      {
+       "date": "2024-05-10",
+       "description": "Purchase",
+       "amount": "6000.00",
+       "units": "100.000",
+       "nav": "60.0000",
+       "balance": "110.000",
+       "type": "PURCHASE",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-07-01",
+       "description": "IDCW Reinvestment @ Rs.2.00 per unit",
+       "amount": "1500.00",
+       "units": "25.500",
+       "nav": "58.8235",
+       "balance": "135.500",
+       "type": "DIVIDEND_REINVEST",
+       "dividend_rate": "2.00",
+       "gift_folio": null
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "folio": "5551234",
+   "amc": "ICICI Prudential Mutual Fund",
+   "name": "Asha Verma",
+   "PAN": "ABCDE1234F",
+   "KYC": "OK",
+   "PANKYC": "OK",
+   "schemes": [
+    {
+     "scheme": "ICICI Prudential Nifty 50 Index Fund - Direct Plan - Growth",
+     "advisor": "DIRECT",
+     "rta_code": "P8042",
+     "rta": "CAMS",
+     "type": "EQUITY",
+     "isin": "INF109K012R6",
+     "amfi": "121366",
+     "nominees": [
+      "Ravi Verma"
+     ],
+     "open": "0",
+     "close": "997.070",
+     "close_calculated": "997.070",
+     "valuation": {
+      "date": "2026-10-10",
+      "nav": "75.5000",
+      "cost": "60000.00",
+      "value": "75278.78"
+     },
+     "transactions": [
+      {
+       "date": "2023-01-07",
+       "description": "SIP Purchase Instalment 1",
+       "amount": "2000.00",
+       "units": "40.000",
+       "nav": "50.0000",
+       "balance": "40.000",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-02-07",
+       "description": "SIP Purchase Instalment 2",
+       "amount": "2000.00",
+       "units": "39.409",
+       "nav": "50.7500",
+       "balance": "79.409",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-03-07",
+       "description": "SIP Purchase Instalment 3",
+       "amount": "2000.00",
+       "units": "38.835",
+       "nav": "51.5000",
+       "balance": "118.244",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-04-07",
+       "description": "SIP Purchase Instalment 4",
+       "amount": "2000.00",
+       "units": "38.278",
+       "nav": "52.2500",
+       "balance": "156.522",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-05-07",
+       "description": "SIP Purchase Instalment 5",
+       "amount": "2000.00",
+       "units": "37.736",
+       "nav": "53.0000",
+       "balance": "194.258",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-06-07",
+       "description": "SIP Purchase Instalment 6",
+       "amount": "2000.00",
+       "units": "37.209",
+       "nav": "53.7500",
+       "balance": "231.467",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-07-07",
+       "description": "SIP Purchase Instalment 7",
+       "amount": "2000.00",
+       "units": "36.697",
+       "nav": "54.5000",
+       "balance": "268.164",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-08-07",
+       "description": "SIP Purchase Instalment 8",
+       "amount": "2000.00",
+       "units": "36.199",
+       "nav": "55.2500",
+       "balance": "304.363",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-09-07",
+       "description": "SIP Purchase Instalment 9",
+       "amount": "2000.00",
+       "units": "35.714",
+       "nav": "56.0000",
+       "balance": "340.077",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-10-07",
+       "description": "SIP Purchase Instalment 10",
+       "amount": "2000.00",
+       "units": "35.242",
+       "nav": "56.7500",
+       "balance": "375.319",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-11-07",
+       "description": "SIP Purchase Instalment 11",
+       "amount": "2000.00",
+       "units": "34.783",
+       "nav": "57.5000",
+       "balance": "410.102",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2023-12-07",
+       "description": "SIP Purchase Instalment 12",
+       "amount": "2000.00",
+       "units": "34.335",
+       "nav": "58.2500",
+       "balance": "444.437",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-01-07",
+       "description": "SIP Purchase Instalment 13",
+       "amount": "2000.00",
+       "units": "33.898",
+       "nav": "59.0000",
+       "balance": "478.335",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-02-07",
+       "description": "SIP Purchase Instalment 14",
+       "amount": "2000.00",
+       "units": "33.473",
+       "nav": "59.7500",
+       "balance": "511.808",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-03-07",
+       "description": "SIP Purchase Instalment 15",
+       "amount": "2000.00",
+       "units": "33.058",
+       "nav": "60.5000",
+       "balance": "544.866",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-04-07",
+       "description": "SIP Purchase Instalment 16",
+       "amount": "2000.00",
+       "units": "32.653",
+       "nav": "61.2500",
+       "balance": "577.519",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-05-07",
+       "description": "SIP Purchase Instalment 17",
+       "amount": "2000.00",
+       "units": "32.258",
+       "nav": "62.0000",
+       "balance": "609.777",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-06-07",
+       "description": "SIP Purchase Instalment 18",
+       "amount": "2000.00",
+       "units": "31.873",
+       "nav": "62.7500",
+       "balance": "641.650",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-07-07",
+       "description": "SIP Purchase Instalment 19",
+       "amount": "2000.00",
+       "units": "31.496",
+       "nav": "63.5000",
+       "balance": "673.146",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-08-07",
+       "description": "SIP Purchase Instalment 20",
+       "amount": "2000.00",
+       "units": "31.128",
+       "nav": "64.2500",
+       "balance": "704.274",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-09-07",
+       "description": "SIP Purchase Instalment 21",
+       "amount": "2000.00",
+       "units": "30.769",
+       "nav": "65.0000",
+       "balance": "735.043",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-10-07",
+       "description": "SIP Purchase Instalment 22",
+       "amount": "2000.00",
+       "units": "30.418",
+       "nav": "65.7500",
+       "balance": "765.461",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-11-07",
+       "description": "SIP Purchase Instalment 23",
+       "amount": "2000.00",
+       "units": "30.075",
+       "nav": "66.5000",
+       "balance": "795.536",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2024-12-07",
+       "description": "SIP Purchase Instalment 24",
+       "amount": "2000.00",
+       "units": "29.740",
+       "nav": "67.2500",
+       "balance": "825.276",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2025-01-07",
+       "description": "SIP Purchase Instalment 25",
+       "amount": "2000.00",
+       "units": "29.412",
+       "nav": "68.0000",
+       "balance": "854.688",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2025-02-07",
+       "description": "SIP Purchase Instalment 26",
+       "amount": "2000.00",
+       "units": "29.091",
+       "nav": "68.7500",
+       "balance": "883.779",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2025-03-07",
+       "description": "SIP Purchase Instalment 27",
+       "amount": "2000.00",
+       "units": "28.777",
+       "nav": "69.5000",
+       "balance": "912.556",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2025-04-07",
+       "description": "SIP Purchase Instalment 28",
+       "amount": "2000.00",
+       "units": "28.470",
+       "nav": "70.2500",
+       "balance": "941.026",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2025-05-07",
+       "description": "SIP Purchase Instalment 29",
+       "amount": "2000.00",
+       "units": "28.169",
+       "nav": "71.0000",
+       "balance": "969.195",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      },
+      {
+       "date": "2025-06-07",
+       "description": "SIP Purchase Instalment 30",
+       "amount": "2000.00",
+       "units": "27.875",
+       "nav": "71.7500",
+       "balance": "997.070",
+       "type": "PURCHASE_SIP",
+       "dividend_rate": null,
+       "gift_folio": null
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "cas_type": "DETAILED",
+ "file_type": "CAMS",
+ "parse_warnings": []
+}

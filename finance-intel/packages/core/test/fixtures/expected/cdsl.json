@@ -1,0 +1,138 @@
+{
+ "accounts": [
+  {
+   "name": "GROWW INVEST TECH PRIVATE LIMITED",
+   "type": "CDSL Demat Account",
+   "dp_id": "12088700",
+   "client_id": "12345678",
+   "folios": 3,
+   "balance": "110450.00",
+   "owners": [
+    {
+     "name": "ASHA VERMA",
+     "PAN": "ABCDE1234F"
+    }
+   ],
+   "equities": [
+    {
+     "name": "RELIANCE INDUSTRIES LIMITED",
+     "isin": "INE002A01018",
+     "num_shares": "20",
+     "price": "2950.00",
+     "value": "59000.00",
+     "symbol": "RELIANCE",
+     "exchange": "NSE"
+    },
+    {
+     "name": "TATA CONSULTANCY SERVICES LTD",
+     "isin": "INE467B01029",
+     "num_shares": "10",
+     "price": "4200.00",
+     "value": "42000.00",
+     "symbol": "TCS",
+     "exchange": "NSE"
+    }
+   ],
+   "mutual_funds": [
+    {
+     "name": "NIPPON INDIA ETF NIFTY BEES",
+     "isin": "INF204KB14I2",
+     "amfi": null,
+     "type": null,
+     "balance": "35",
+     "nav": "270.00",
+     "value": "9450.00",
+     "avg_cost": null,
+     "total_cost": null,
+     "ucc": null,
+     "folio": null,
+     "pnl": null,
+     "return": null
+    }
+   ],
+   "bonds": []
+  },
+  {
+   "name": "BAJAJ FINANCIAL SECURITIES LIMITED",
+   "type": "CDSL Demat Account",
+   "dp_id": "12081600",
+   "client_id": "87654321",
+   "folios": 1,
+   "balance": "28500.00",
+   "owners": [
+    {
+     "name": "ASHA VERMA",
+     "PAN": "ABCDE1234F"
+    }
+   ],
+   "equities": [
+    {
+     "name": "HDFC BANK LIMITED",
+     "isin": "INE040A01034",
+     "num_shares": "15",
+     "price": "1900.00",
+     "value": "28500.00",
+     "symbol": "HDFCBANK",
+     "exchange": "NSE"
+    }
+   ],
+   "mutual_funds": [],
+   "bonds": []
+  },
+  {
+   "name": "Mutual Fund Folios",
+   "type": "Mutual Fund Folios",
+   "dp_id": "",
+   "client_id": "",
+   "folios": 2,
+   "balance": "45678.90",
+   "owners": [
+    {
+     "name": "ASHA VERMA",
+     "PAN": "ABCDE1234F"
+    }
+   ],
+   "equities": [],
+   "mutual_funds": [
+    {
+     "name": "HFCDG - HDFC Flexi Cap Fund - Direct Growth",
+     "isin": "INF179K01UT0",
+     "amfi": "118955",
+     "type": "EQUITY",
+     "balance": "57.634",
+     "nav": "2012.3456",
+     "value": "115977.43",
+     "avg_cost": null,
+     "total_cost": "105000.00",
+     "ucc": null,
+     "folio": "1234567",
+     "pnl": null,
+     "return": null
+    },
+    {
+     "name": "PP001ZG - Parag Parikh Flexi Cap Fund",
+     "isin": "INF879O01027",
+     "amfi": "122639",
+     "type": "EQUITY",
+     "balance": "135.500",
+     "nav": "92.1100",
+     "value": "12480.91",
+     "avg_cost": null,
+     "total_cost": "8500.00",
+     "ucc": null,
+     "folio": "9988776",
+     "pnl": null,
+     "return": null
+    }
+   ],
+   "bonds": []
+  }
+ ],
+ "statement_period": {
+  "from": "01-09-2026",
+  "to": "30-09-2026"
+ },
+ "file_type": "CDSL",
+ "nps": null,
+ "parse_warnings": []
+}

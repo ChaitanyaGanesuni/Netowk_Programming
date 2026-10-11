@@ -389,6 +389,19 @@ All arithmetic happens in the deterministic engine. The LLM only receives verifi
 
 The parsers are TypeScript ports of casparser 1.4.1 (MIT). They are verified against casparser's own output on synthetic statements, **not yet on your real statements**. The first real CAS import is the acceptance test.
 
+**Phases 4–9 status (2026-10-11):**
+
+| Phase | Status |
+|---|---|
+| 4. Bank and card transactions | Generic parsers for e-mail alerts and for card and bank statement summaries, with confidence scores [U: not tested on your real e-mails]. Includes transfer and card-payment pairing, and balance reconciliation against the bank-reported "Avl bal". |
+| 5. Net worth and cash flow | Monthly cash flow, recurring payments, and net worth with per-source freshness. |
+| 6. Insights | Late fees, bank charges, duplicates, subscriptions, food delivery, category spikes, small purchases, and spending growing faster than income. Each carries evidence and a saving basis. |
+| 7. Portfolio | XIRR, FIFO realised and unrealised gains, allocation by AMFI SEBI category, concentration, emergency reserve, and scenario shocks. Benchmark, TER and overlap are disclosed as unavailable (no free authoritative source wired in). |
+| 8. Assistant, reminders, report | Deterministic answers to the 10 core questions. Optional Groq rewording (your own free key; redacted; figures verified). Local due-date reminders. Monthly report and CSV/JSON export. |
+| 9. Security and release | SECURITY.md. LLM payload redaction (tested). Private lock-screen notifications. Export files wiped. APK via GitHub Actions (debug-signed). |
+
+Costs: **₹0**. Cloudflare and GitHub Actions free tiers, Gmail API, AMFI public file, Groq free plan (optional).
+
 ---
 
 ## 13. Source index

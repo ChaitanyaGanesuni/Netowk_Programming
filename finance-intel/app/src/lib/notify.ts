@@ -14,7 +14,7 @@ let channelReady = false;
 
 async function ensurePermission(): Promise<boolean> {
   if (Platform.OS === 'android' && !channelReady) {
-    await Notifications.setNotificationChannelAsync('finance', { name: 'Finance reminders', importance: Notifications.AndroidImportance.DEFAULT });
+    await Notifications.setNotificationChannelAsync('finance', { name: 'Finance reminders', importance: Notifications.AndroidImportance.DEFAULT, lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE });
     channelReady = true;
   }
   const current = await Notifications.getPermissionsAsync();

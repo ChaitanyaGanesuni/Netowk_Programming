@@ -1,11 +1,13 @@
-import { File, Paths } from 'expo-file-system';
+import { Directory, File, Paths } from 'expo-file-system';
 import { shareAsync } from 'expo-sharing';
 import { getDatabase } from './database';
 
 /** Writes text to the app cache and opens the system share sheet. The user picks the destination. */
 export async function shareTextFile(name: string, body: string, mimeType: string): Promise<void> {
-  const file = new File(Paths.cache, name);
-  if (file.exists) file.delete();
+  clearExports(); // only the latest export is ever kept on the phone
+  const dir = new Directory(Paths.cache, 'exports');
+  dir.create({ idempotent: true });
+  const file = new File(dir, name);
   file.create();
   file.write(body);
   await shareAsync(file.uri, { mimeType, dialogTitle: name });
@@ -23,4 +25,10 @@ export async function exportAllData(): Promise<void> {
   for (const table of EXPORT_TABLES) data[table] = await db.getAllAsync(`SELECT * FROM ${table}`);
   const body = JSON.stringify({ exportedAt: new Date().toISOString(), units: { amounts: 'paise', units: 'millionths', prices: 'millionths' }, data }, null, 1);
   await shareTextFile(`finance-intel-export-${new Date().toISOString().slice(0, 10)}.json`, body, 'application/json');
+}
+
+/** Removes previously shared export files (also called by "Delete all local data"). */
+export function clearExports(): void {
+  const dir = new Directory(Paths.cache, 'exports');
+  if (dir.exists) dir.delete();
 }

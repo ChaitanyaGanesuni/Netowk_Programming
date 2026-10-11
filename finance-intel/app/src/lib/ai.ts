@@ -1,5 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
-import { acceptLlmAnswer, buildLlmMessages, type AssistantAnswer } from '@fi/core';
+import { acceptLlmAnswer, buildLlmMessages, LLM_EXCLUDED_INTENTS, type AssistantAnswer, type Intent } from '@fi/core';
 
 /**
  * Optional AI rephrasing via Groq's free plan (OpenAI-compatible API), using YOUR API key,
@@ -38,8 +38,9 @@ export async function deleteAiSettings(): Promise<void> {
 export type AiResult = { answer: AssistantAnswer; note: string | null };
 
 /** Returns the AI rephrasing if it passes validation; otherwise the calculated answer. */
-export async function rephrase(question: string, base: AssistantAnswer, settings: AiSettings): Promise<AiResult> {
+export async function rephrase(question: string, intent: Intent, base: AssistantAnswer, settings: AiSettings): Promise<AiResult> {
   if (!settings.apiKey) return { answer: base, note: null };
+  if (LLM_EXCLUDED_INTENTS.has(intent)) return { answer: base, note: 'This answer lists individual transactions, so it is never sent to the AI service.' };
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20_000);
   try {

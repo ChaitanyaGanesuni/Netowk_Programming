@@ -53,7 +53,7 @@ export default function AssistantScreen() {
     try {
       const base = answer(intent, buildFacts(await loadFinanceState()));
       if (useAi && settings.apiKey) {
-        const r = await rephrase(q, base, settings);
+        const r = await rephrase(q, intent, base, settings);
         setResult(r.answer);
         setNote(r.note);
       } else {
@@ -127,8 +127,9 @@ export default function AssistantScreen() {
       <Card>
         <Title>Optional AI wording</Title>
         <Muted>
-          Answers are always calculated on this phone. If you add a free Groq API key, the calculated answer and its figures (no transactions, names or account
-          numbers) are sent to Groq to be reworded; any reply that changes a figure is discarded. Turn on Zero Data Retention in your Groq console.
+          Answers are always calculated on this phone. If you add a free Groq API key, your question, the calculated answer and its figures are sent to Groq to
+          be reworded. Account/card numbers and e-mail addresses are masked first, and answers that list individual transactions are never sent. Fund and
+          category names can be included; any reply that changes a figure is discarded. Turn on Zero Data Retention in your Groq console.
         </Muted>
         <View style={ui.row}>
           <Label>Use AI wording</Label>

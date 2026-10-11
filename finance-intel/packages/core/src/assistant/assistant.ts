@@ -189,6 +189,22 @@ export type LlmAnswer = z.infer<typeof LlmAnswer>;
  * Builds the prompt for an optional LLM. Only the computed answer, its fact list and gaps are
  * sent — no transactions, merchant names, account numbers or personal identifiers.
  */
+/** Intents whose answers are transaction-level (merchant, date, amount) are never sent to an LLM. */
+export const LLM_EXCLUDED_INTENTS: ReadonlySet<Intent> = new Set<Intent>(['largest_discretionary']);
+
+const ACCOUNT_NUMBER_RE = /(?:[•*xX]{2,}\s?|\b(?:a\/c|acct|account|card)\s*(?:no\.?|number|ending(?:\s+in)?)?\s*[:#]?\s*)\d{3,}|\b\d{6,}\b/gi;
+const EMAIL_RE = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
+
+/** Masks account/card numbers (incl. last-4 suffixes) and e-mail addresses before text leaves the phone. */
+export function redactForLlm(text: string): string {
+  return text.replace(EMAIL_RE, '[email]').replace(ACCOUNT_NUMBER_RE, '[account]');
+}
+
+/**
+ * Builds the LLM request. Sends only the question, the verified answer text and its figures,
+ * with account numbers and e-mail addresses masked. Known gaps stay on the phone (they name
+ * accounts) and are re-attached to whatever answer is shown.
+ */
 export function buildLlmMessages(question: string, base: AssistantAnswer): Array<{ role: 'system' | 'user'; content: string }> {
   return [
     {
@@ -200,7 +216,11 @@ export function buildLlmMessages(question: string, base: AssistantAnswer): Array
     },
     {
       role: 'user',
-      content: JSON.stringify({ question, verifiedAnswer: base.text, facts: base.facts, knownGaps: base.uncertainty }),
+      content: JSON.stringify({
+        question: redactForLlm(question),
+        verifiedAnswer: redactForLlm(base.text),
+        facts: base.facts.map((f) => ({ id: f.id, label: redactForLlm(f.label), value: f.value })),
+      }),
     },
   ];
 }

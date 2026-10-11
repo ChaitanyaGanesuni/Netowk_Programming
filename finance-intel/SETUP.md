@@ -1,4 +1,4 @@
-# Setup guide (Phase 2)
+# Setup guide
 
 Everything here uses free tiers. You need a Google account, a free Cloudflare account, and Node.js 22 on a laptop. Steps marked **(you)** need your accounts; nothing here asks for bank passwords, PINs or OTPs.
 
@@ -44,21 +44,20 @@ npx wrangler secret put GOOGLE_CLIENT_ID
 npx wrangler secret put GOOGLE_CLIENT_SECRET
 ```
 
-## 3. Build and install the Android app — (you)
+## 3. Install the Android app — (you)
 
-The app uses native modules (encrypted SQLite, Keystore), so it needs a development or preview build rather than Expo Go.
+The app uses native modules (encrypted SQLite, Keystore, WebView), so it needs a real build rather than Expo Go.
 
-**Option A, cloud build (EAS):**
+**Option A, ready-made APK (recommended, free):**
 
-```bash
-cd finance-intel/app
-npx eas-cli@latest login
-npx eas-cli@latest build --platform android --profile preview   # produces an installable APK
-```
+1. Every push to the app's branch runs the [finance-intel Android APK workflow](https://github.com/ChaitanyaGanesuni/Netowk_Programming/actions/workflows/finance-intel-android.yml). It typechecks, runs all tests, then builds a release APK for 64-bit ARM phones (practically every Android phone from 2017 on).
+2. Open the latest green run, scroll to **Artifacts**, and download `finance-intel-apk`. GitHub delivers it as a zip, so unzip it to get `app-release.apk`. Artifacts expire after 90 days, but you can re-run the workflow at any time.
+3. Copy it to your phone, open it, and allow "Install unknown apps" for your file manager when Android asks.
+4. Play Protect may warn that the app is unrecognised. That is expected for a personal APK.
 
-EAS has a free build quota; I could not verify the current limit from the sandbox.
+**About signing:** the APK is signed with the standard Android **debug** key. That is fine for personal sideloading, but anyone can sign an APK with that same key. Only install APKs from your own workflow runs. Moving to a personal release key later requires uninstalling, which deletes the local database, so first use **Export all my data**. After reinstalling, everything is rebuilt from Gmail on the next sync.
 
-**Option B, local build:** install Android Studio (JDK + SDK), connect your phone with USB debugging, then run `npx expo run:android`.
+**Option B, local build:** install Android Studio (JDK 17 + SDK), then run `cd finance-intel/app && npx expo run:android --variant release` with your phone connected over USB debugging.
 
 ## 4. First run
 
@@ -83,12 +82,35 @@ EAS has a free build quota; I could not verify the current limit from the sandbo
 
 The PDF engine (`app/assets/pdfjs/engine.html`) is generated automatically by `npm install` (postinstall) from the pinned `pdfjs-dist`.
 
-## 6. Optional but recommended
+## 6. Bank and card transactions (Phase 4)
 
-- In net-banking and on each card's portal, turn on **email** transaction alerts and **email** e-statements. More emails means fewer gaps.
+Nothing here needs passwords or manual entry. Transactions come from the alert and statement e-mails your banks already send.
+
+1. In net-banking and on each card's portal, turn on **e-mail** transaction alerts and **e-mail** e-statements:
+   - **SBI** in particular often sends alerts by SMS only.
+   - The app never reads SMS.
+2. Statement PDFs are usually password-protected. On the **Documents** screen, save each institution's statement password using the format the bank documents (often a mix of name and date of birth). The passwords stay in the Keystore.
+3. **The parsers are generic.** They were written against typical Indian alert phrasings, not your actual e-mails. After the first sync, open **Documents**:
+   - "Imported" means the e-mail was understood.
+   - "Unsupported" e-mails have a **Share a redacted sample** button. It turns every digit into 9 and masks e-mail addresses, UPI IDs and PAN, but **names (yours, merchants') are left in**, so read it and delete them before sending. Send me those samples and I will add exact templates.
+4. On the **Transactions** screen, tap any transaction to fix its category. The fix becomes a rule for that merchant and applies to its past and future transactions, so you teach the app once. Rules are listed at the bottom of the screen, where you can remove them.
+5. The dashboard flags **balance gaps** where the alerts don't add up to the balance your bank reported. A gap usually means some alerts never reached e-mail.
+
+## 7. Daily use
+
+- **Dashboard:** net worth with a 12-month history, this month's cash flow, upcoming card bills, savings opportunities and data gaps.
+- **Insights:** each one shows the transactions behind it and how the saving estimate was calculated.
+- **Portfolio:** value, XIRR, gains, allocation, concentration and hypothetical shocks. Benchmark comparison, TER and fund overlap are listed as unavailable rather than guessed.
+- **Assistant:** answers are calculated on the phone. To have them worded more naturally:
+  - Create a free key at console.groq.com, turn on Zero Data Retention, and paste the key on the Assistant screen.
+  - Check that the model name exists in your Groq console; the default `llama-3.3-70b-versatile` may be retired.
+- **Reminders:** local notifications 3 days before and on each card's due date. Android 13+ asks for permission.
+- **Report:** a monthly summary to share, plus a CSV of all transactions.
 
 ## Revoking access
 
 - **In the app:** Gmail connection → **Disconnect and revoke access**. This revokes the grant at Google and deletes the backend's tokens, message pointers and history.
 - **At Google:** myaccount.google.com → Security → Third-party apps with account access.
-- **On the phone:** Device & privacy settings → **Delete all local data**.
+- **On the phone:** Device & privacy settings → **Export all my data**, then **Delete all local data**.
+
+See [SECURITY.md](SECURITY.md) for what is stored where.

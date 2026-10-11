@@ -2,6 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { openAuthSessionAsync } from 'expo-web-browser';
 import { BackendClient } from './api';
 import { deleteLocalDatabase } from './database';
+import * as Notifications from 'expo-notifications';
+import { clearExports } from './exportData';
 import { deleteAllSecrets, loadBackendCredentials, type BackendCredentials } from './secrets';
 import { queryParams } from './url';
 import { forgetConnectionLocally, loadSnapshot, refreshConnections, syncAll, type LocalSnapshot } from './sync';
@@ -92,6 +94,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const forgetDevice = useCallback(async () => {
     await deleteLocalDatabase();
     await deleteAllSecrets();
+    clearExports();
+    await Notifications.cancelAllScheduledNotificationsAsync().catch(() => undefined);
     setCredentials(null);
     setSnapshot(null);
     setMessage('All local data and keys were deleted from this device.');

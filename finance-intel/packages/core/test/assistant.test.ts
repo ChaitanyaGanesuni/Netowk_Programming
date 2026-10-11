@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { acceptLlmAnswer, answer, buildLlmMessages, detectIntent, ledgerToCsv, monthlyReport, type Facts } from '../src/assistant';
+import { acceptLlmAnswer, answer, buildLlmMessages, detectIntent, ledgerToCsv, LLM_EXCLUDED_INTENTS, monthlyReport, redactForLlm, type Facts } from '../src/assistant';
 import type { MonthSummary } from '../src/analytics';
 
 const month = (m: string, expense: number, income = 10000000): MonthSummary => ({
@@ -76,6 +76,15 @@ describe('LLM guard', () => {
     const payload = buildLlmMessages('What is my portfolio worth?', base)[1]!.content;
     expect(payload).toContain('₹18,00,000.00');
     expect(payload).not.toContain('CROMA');
+  });
+
+  it('keeps account numbers, e-mails and gap notes on the phone', () => {
+    const withGap = { ...base, uncertainty: ['HDFC Bank ••1234 data is stale (as of 2026-09-01).'], text: `${base.text} Card XX5678 and a/c no. 50100012345678, mail me@example.com.` };
+    const payload = buildLlmMessages('Is my card ending 4321 fine?', withGap)[1]!.content;
+    for (const leaked of ['1234', '5678', '50100012345678', '4321', 'me@example.com', 'stale']) expect(payload).not.toContain(leaked);
+    expect(payload).toContain('₹18,00,000.00');
+    expect(redactForLlm('Spent ₹1,23,456.00 on 2026-10-01')).toBe('Spent ₹1,23,456.00 on 2026-10-01');
+    expect(LLM_EXCLUDED_INTENTS.has('largest_discretionary')).toBe(true);
   });
 
   it('accepts a rephrasing that uses only verified figures', () => {

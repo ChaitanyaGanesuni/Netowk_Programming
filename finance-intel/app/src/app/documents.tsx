@@ -14,7 +14,7 @@ const STATUS: Record<DocumentStatus, { label: string; tone: keyof Palette }> = {
   needs_password: { label: 'Needs password', tone: 'warn' },
   unsupported: { label: 'Unsupported', tone: 'warn' },
   failed: { label: 'Failed', tone: 'danger' },
-  awaiting_parser: { label: 'Parser in Phase 4', tone: 'muted' },
+  awaiting_parser: { label: 'No parser yet', tone: 'muted' },
   skipped: { label: 'Not financial data', tone: 'muted' },
 };
 
@@ -147,7 +147,7 @@ export default function DocumentsScreen() {
               Check: {(JSON.parse(row.warnings) as string[]).slice(0, 3).join(' · ')}
             </Text>
           )}
-          {row.status === 'awaiting_parser' && (
+          {(row.status === 'awaiting_parser' || row.status === 'unsupported') && (
             <Button title="Share a redacted sample (helps build its parser)" kind="secondary" busy={busy === row.message_id} onPress={() => void shareSample(row)} />
           )}
         </Card>

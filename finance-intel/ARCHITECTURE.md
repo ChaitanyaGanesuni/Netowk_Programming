@@ -1,14 +1,16 @@
-# Architecture (Phases 2–3)
+# Architecture
 
 ```
 finance-intel/
 ├── packages/core   Shared TypeScript: adapter contract, sync driver, retry/backoff, freshness,
 │                   institution registry, Zod wire contracts, decimal parsing, AMFI parser,
-│                   connection-row view model. Pure, unit-tested, no platform APIs.
+│                   connection-row view model, CAS parsers, ledger, analytics, portfolio,
+│                   assistant. Pure, unit-tested, no platform APIs.
 ├── backend         Cloudflare Worker (free tier) + D1: device enrollment, Google OAuth,
 │                   encrypted token storage, scheduled Gmail sweeps, message proxy.
-└── app             Expo (SDK 57) + Expo Router + SQLCipher SQLite: connections screen,
-                    on-device sync of message pointers and NAVs.
+└── app             Expo (SDK 57) + Expo Router + SQLCipher SQLite: dashboard, transactions,
+                    insights, portfolio, assistant, report, documents, connections; on-device
+                    parsing, local reminders, SVG charts.
 ```
 
 ## Data flow
@@ -114,8 +116,45 @@ Gmail (CAS / statement emails) ──backend proxy──▶ app
 - The NPS section of a CDSL CAS.
 - Bank and card email parsing (Phase 4, needs your redacted samples).
 
-## Known gaps carried to later phases
+## Phases 4–8: ledger, analytics, assistant
 
-- Raw email parsing per bank and card template: Phase 4. This needs your redacted samples; the Documents screen can produce them.
-- Push notifications for `needs_reauth` and failed syncs: Phase 8. Today they show on the connections screen.
-- SQLCipher keying (`PRAGMA key`), the OAuth return flow and the WebView bridge on a physical device still need on-device confirmation; the build sandbox has no Android emulator (the engine page itself is tested in Chromium).
+```
+alert / statement e-mail ──▶ classifyMail
+  alerts:     parseAlert (generic patterns, confidence 0–1) ─▶ raw_transactions, balance_snapshots ("Avl bal")
+  statements: parseCardStatement / parseBankStatement (PDF text) ─▶ card_statements, balance_snapshots
+raw_transactions + category_rules ─▶ buildLedger (kind, category, transfer / card-payment pairing)
+ledger ─▶ summarizeMonths, detectRecurring, generateInsights, reconcileBalances
+balances + card dues + MF (RTA) + demat ─▶ computeNetWorth ─▶ networth_snapshots (daily)
+mf_transactions + NAVs (+ AMFI category) ─▶ fundPerformance (XIRR, FIFO), allocation, concentration, scenarios
+everything ─▶ buildFacts ─▶ assistant answer (deterministic) ─▶ optional LLM rewording (redacted, figure-checked)
+```
+
+| Design rule | How it is enforced |
+|---|---|
+| Exact money | Paise and micro-units are stored as integers; arithmetic uses `bigint`/`Dec`. Floats appear only in ratios (XIRR, shares). |
+| No double counting | Transfers between your own accounts, card bill payments and investments are excluded from spending, and refunds are netted. Each transaction backs at most one insight's saving estimate. Demat MF folios that also appear in RTA data are counted once. |
+| Idempotent imports | An alert's key is `account|date|direction|amount|reference`, or the message id when there is no reference. Re-processing (after a parser upgrade, `PARSER_VERSION`) adds nothing. |
+| Evidence | Every insight lists the transactions behind it and its saving basis. Every assistant answer lists the figures it used and its caveats. |
+| AI is never arithmetic | The LLM only rewords. A reply is accepted only if it parses (zod), cites known fact ids, and every rupee figure it mentions is one of the facts. |
+| Honest gaps | Pending card spends, stale sources, balance-reconciliation gaps, incomplete cost history, and analytics that need unavailable data (`UNAVAILABLE_ANALYTICS`) are shown, never filled in. |
+
+**Parser status.** Alert and statement parsers use generic phrasing common to Indian banks and card issuers. Real e-mails from your institutions have **not** been seen. Anything unparsed is marked "Unsupported" with a redacted-sample button, and parser upgrades re-process those messages automatically.
+
+## Release build
+
+`.github/workflows/finance-intel-android.yml` runs on every push to `finance-intel/**`:
+
+1. `npm ci`, typecheck and all tests.
+2. `expo prebuild`.
+3. `./gradlew assembleRelease` (arm64-v8a), signed with the debug keystore.
+
+The APK is uploaded as the `finance-intel-apk` artifact. The build runs on GitHub because the development sandbox cannot reach Google's Maven repository.
+
+See [SECURITY.md](SECURITY.md) for the threat model.
+
+## Known gaps
+
+- Exact per-institution templates for alerts and statements need your redacted samples.
+- NSDL CAS, summary CAS, the NPS section, and broker contract notes are not parsed.
+- Benchmark comparison, expense ratio (TER) and fund overlap need data sources not available for free; they are disclosed in-app.
+- SQLCipher keying, the OAuth return flow, the WebView bridge and notifications have not been confirmed on a physical device; the build sandbox has no Android emulator.

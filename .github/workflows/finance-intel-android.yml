@@ -1,0 +1,64 @@
+name: finance-intel Android APK
+
+on:
+  push:
+    branches: [ccr-d7b4bdc8-szpltl]
+    paths:
+      - 'finance-intel/**'
+      - '.github/workflows/finance-intel-android.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: finance-intel-android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: finance-intel
+    env:
+      EXPO_NO_TELEMETRY: '1'
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: finance-intel/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install dependencies (also vendors the pdf.js engine page)
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests (core, backend, app pipeline)
+        run: npm test
+
+      - name: Generate native Android project
+        working-directory: finance-intel/app
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK (arm64)
+        working-directory: finance-intel/app/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-intel-apk
+          path: finance-intel/app/android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 30

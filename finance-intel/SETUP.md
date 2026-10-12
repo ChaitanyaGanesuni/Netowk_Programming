@@ -4,7 +4,27 @@ Everything here uses free tiers. You need a Google account, a free Cloudflare ac
 
 > I could not open the Google Cloud, Cloudflare or Expo consoles from the build sandbox, so menu names below may differ slightly from what you see. The settings themselves (scopes, redirect URI, publishing status) are what matter.
 
-## 1. Deploy the backend (Cloudflare Worker) — (you)
+## 1a. Deploy the backend from your phone (no laptop)
+
+A GitHub Actions workflow (`.github/workflows/finance-intel-backend.yml`) does the deploy for you. You only create accounts and paste values into GitHub, all in the phone's browser. Turn on "Desktop site" if a page is cramped.
+
+1. **Cloudflare account and subdomain.** Sign up free at dash.cloudflare.com. Open **Workers & Pages** once; if asked, choose your `workers.dev` subdomain (e.g. `chaitanya`).
+2. **Account ID.** It is shown on the Workers & Pages overview, and is also the long hex string in the dashboard's address bar (`dash.cloudflare.com/<account id>/…`).
+3. **API token.** Go to My Profile → **API Tokens** → **Create Token** and use the template **Edit Cloudflare Workers**. Add the permission **Account → D1 → Edit** if it isn't listed. Under Account Resources, pick your account. Then **Continue → Create Token** and copy the token, which is shown once.
+4. **Enrollment code.** Make up a random code of 20+ letters and digits (your phone's password manager can generate one) and save it in the password manager. You will type it into the app.
+5. **GitHub secrets.** In github.com/ChaitanyaGanesuni/Netowk_Programming go to **Settings → Secrets and variables → Actions → New repository secret** and add:
+   - `CLOUDFLARE_API_TOKEN`: the token from step 3
+   - `CLOUDFLARE_ACCOUNT_ID`: the ID from step 2
+   - `ENROLLMENT_CODE`: the code from step 4
+   - (later, after §2) `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+
+   Secrets are encrypted by GitHub and never shown in logs. This repository is **public**, so the workflow also hides your Worker URL and database ID from its logs.
+6. **Run it.** Open **Actions → finance-intel backend deploy**, open the latest run and tap **Re-run all jobs**. When it is green, your Worker URL is `https://finance-intel.<your subdomain>.workers.dev`; Cloudflare → Workers & Pages → finance-intel shows it too.
+7. In the app's **Set up** screen, enter that URL and your enrollment code, then tap **Enrol device**.
+
+The workflow generates `TOKEN_ENCRYPTION_KEY` itself on the first run and never prints it. Re-running is safe: it reuses the database and that key. After adding the Google secrets (§2), re-run it once more.
+
+## 1. Deploy the backend from a laptop (alternative) — (you)
 
 ```bash
 cd finance-intel

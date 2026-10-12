@@ -1,0 +1,158 @@
+# Deploys the finance-intel Cloudflare Worker + D1 database without a laptop.
+# Needs repository secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, ENROLLMENT_CODE (16+ chars, you choose it)
+#   optional: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET (needed for "Connect Gmail")
+# This repository is public, so its logs are public: no secret, database id or Worker URL is printed.
+name: finance-intel backend deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ccr-d7b4bdc8-szpltl]
+    paths:
+      - .github/workflows/finance-intel-backend.yml
+      - finance-intel/backend/**
+
+concurrency:
+  group: finance-intel-backend-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ENROLLMENT_CODE: ${{ secrets.ENROLLMENT_CODE }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+      WRANGLER_SEND_METRICS: 'false'
+      # Strips Worker URLs and database ids from any error output we print.
+      SANITIZE: 's#https://[A-Za-z0-9.-]+\.workers\.dev#https://<hidden>.workers.dev#g; s#[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}#<id>#g'
+    defaults:
+      run:
+        working-directory: finance-intel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          missing=""
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          code="$(printf '%s' "$ENROLLMENT_CODE" | tr -d '[:space:]')"
+          [ "${#code}" -ge 16 ] || missing="$missing ENROLLMENT_CODE(16+_characters)"
+          if [ -n "$missing" ]; then
+            echo "::error::Add these repository secrets, then re-run this workflow:$missing"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: finance-intel/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck and test the backend
+        run: npm run typecheck --workspace=@fi/backend && npm test --workspace=@fi/backend
+
+      - name: Find or create the D1 database
+        working-directory: finance-intel/backend
+        run: |
+          find_id() {
+            npx wrangler d1 list --json 2>/dev/null | node -e '
+              let s = ""; process.stdin.on("data", (d) => (s += d)).on("end", () => {
+                try { const db = JSON.parse(s.slice(Math.max(0, s.search(/^\s*\[/m)))).find((d) => d.name === "finance-intel"); process.stdout.write(db ? db.uuid : ""); }
+                catch { process.stdout.write(""); }
+              });'
+          }
+          id="$(find_id)"
+          if [ -z "$id" ]; then
+            npx wrangler d1 create finance-intel > /dev/null 2>&1 || true
+            id="$(find_id)"
+          fi
+          if [ -z "$id" ]; then
+            echo "::error::Could not list or create the D1 database. Check that the API token has 'Account → D1 → Edit' and that CLOUDFLARE_ACCOUNT_ID is right."
+            exit 1
+          fi
+          echo "::add-mask::$id"
+          sed -i "s/REPLACE_WITH_D1_DATABASE_ID/$id/" wrangler.jsonc
+
+      - name: Apply database migrations
+        working-directory: finance-intel/backend
+        run: |
+          if ! out="$(npx wrangler d1 migrations apply finance-intel --remote 2>&1)"; then
+            echo "$out" | sed -E "$SANITIZE"
+            echo "::error::Migrations failed (see above)."
+            exit 1
+          fi
+          echo "Migrations applied."
+
+      - name: Deploy the Worker
+        working-directory: finance-intel/backend
+        run: |
+          if ! out="$(npx wrangler deploy 2>&1)"; then
+            echo "$out" | sed -E "$SANITIZE"
+            echo "::error::Deploy failed (see above). If it mentions a workers.dev subdomain, open Cloudflare → Workers & Pages once and choose one."
+            exit 1
+          fi
+          url="$(echo "$out" | grep -oE 'https://[A-Za-z0-9.-]+\.workers\.dev' | head -n 1)"
+          if [ -z "$url" ]; then
+            echo "::error::Deployed, but no workers.dev URL was reported. Open Cloudflare → Workers & Pages and enable the workers.dev route for finance-intel."
+            exit 1
+          fi
+          echo "::add-mask::$url"
+          # The OAuth redirect URI is built from PUBLIC_BASE_URL, so deploy once more with the real URL.
+          sed -i "s#https://finance-intel.example.workers.dev#$url#" wrangler.jsonc
+          if ! out="$(npx wrangler deploy 2>&1)"; then echo "$out" | sed -E "$SANITIZE"; exit 1; fi
+          echo "WORKER_URL=$url" >> "$GITHUB_ENV"
+
+      - name: Set Worker secrets
+        working-directory: finance-intel/backend
+        run: |
+          put() { # name, value
+            if ! out="$(printf '%s' "$2" | npx wrangler secret put "$1" 2>&1)"; then
+              echo "$out" | sed -E "$SANITIZE"
+              echo "::error::Could not set $1."
+              exit 1
+            fi
+            echo "Set $1."
+          }
+          trim() { printf '%s' "$1" | tr -d '\r\n' | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'; }
+          existing="$(npx wrangler secret list --format json 2>/dev/null || echo '[]')"
+          if ! echo "$existing" | grep -q '"TOKEN_ENCRYPTION_KEY"'; then
+            # Generated once and never shown; replacing it later would only require reconnecting Gmail.
+            put TOKEN_ENCRYPTION_KEY "$(openssl rand -base64 32)"
+          fi
+          put ENROLLMENT_CODE "$(trim "$ENROLLMENT_CODE")"
+          if [ -n "$GOOGLE_CLIENT_ID" ] && [ -n "$GOOGLE_CLIENT_SECRET" ]; then
+            put GOOGLE_CLIENT_ID "$(trim "$GOOGLE_CLIENT_ID")"
+            put GOOGLE_CLIENT_SECRET "$(trim "$GOOGLE_CLIENT_SECRET")"
+          else
+            echo "::warning::GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET are not set yet. Enrolment works; 'Connect Gmail' needs them (add them and re-run)."
+          fi
+
+      - name: Check the Worker answers
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "$WORKER_URL/health" | grep -q '"ok":true'; then echo "Worker is up."; exit 0; fi
+            sleep 10
+          done
+          echo "::error::The Worker did not answer /health."
+          exit 1
+
+      - name: Summary
+        run: |
+          {
+            echo "### Backend deployed"
+            echo "Your Worker URL is **https://finance-intel.&lt;your-subdomain&gt;.workers.dev**. It is hidden here because this repository's logs are public;"
+            echo "see Cloudflare → Workers & Pages → finance-intel. In the app, enter that URL and your ENROLLMENT_CODE."
+            echo "Google OAuth redirect URI: that URL followed by \`/oauth/google/callback\`."
+          } >> "$GITHUB_STEP_SUMMARY"
